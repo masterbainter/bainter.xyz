@@ -3,14 +3,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, collection, deleteDoc, updateDoc, onSnapshot, getDocs, enableIndexedDbPersistence, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// --- PWA Service Worker Registration ---
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service worker registered', reg))
-            .catch(err => console.error('Service worker registration failed', err));
-    });
-}
+// --- PWA Service Worker Registration (Temporarily Disabled for Debugging) ---
+// if ('serviceWorker' in navigator) {
+//     window.addEventListener('load', () => {
+//         navigator.serviceWorker.register('./sw.js')
+//             .then(reg => console.log('Service worker registered', reg))
+//             .catch(err => console.error('Service worker registration failed', err));
+//     });
+// }
 
 // --- FIREBASE SETUP ---
 const firebaseConfig = {
