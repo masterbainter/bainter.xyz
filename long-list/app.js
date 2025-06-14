@@ -3,7 +3,12 @@ import { onAuthStateChanged, signInAnonymously, GoogleAuthProvider, signInWithPo
 import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { db, auth } from './firebase-init.js'; // Import our initialized services
 
-// --- INITIAL DATA & PARSER (FOR FIRST-TIME SETUP) ---
+// --- CONFIGURATION ---
+// IMPORTANT: Replace this placeholder with your actual User UID from the Firebase Authentication console.
+// This is the user whose task list will be shown to guests in read-only mode.
+const ownerId = "r7a8zzq8SNePyDpyh67LEg6hBAf1"; 
+
+// --- INITIAL DATA & PARSER (FOR FIRST-TIME GOOGLE SIGN-IN) ---
 const rawData = `
 standardtaskGet chainsaw running1Trevor1hour
 standardprojectMaddox Honda 50 rebuild engine2Trevor1day
@@ -58,6 +63,7 @@ let userId;
 let tasksCollectionRef;
 let unsubscribe = () => {};
 let allTasks = [];
+let isGuestMode = false;
 
 // --- UI ELEMENTS ---
 const authOverlay = document.getElementById('auth-overlay');
@@ -68,7 +74,6 @@ const signOutBtn = document.getElementById('sign-out-btn');
 const userProfileSection = document.getElementById('user-profile');
 const userAvatar = document.getElementById('user-avatar');
 const userNameEl = document.getElementById('user-name');
-
 const taskListEl = document.getElementById('taskList');
 const loadingEl = document.getElementById('loading');
 const controlsEl = document.getElementById('controls');
@@ -90,14 +95,17 @@ const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
 // --- AUTHENTICATION FLOW ---
 onAuthStateChanged(auth, user => {
     if (user) {
-        // User is signed in.
-        userId = user.uid;
-        tasksCollectionRef = collection(db, `users/${userId}/tasks`);
+        isGuestMode = user.isAnonymous;
+        
+        // If guest, point to the owner's data. Otherwise, point to the signed-in user's data.
+        const dataOwnerId = isGuestMode ? ownerId : user.uid;
+        userId = dataOwnerId; // The ID of the data we are currently viewing
+        tasksCollectionRef = collection(db, `users/${dataOwnerId}/tasks`);
         
         updateUIAfterAuth(user);
         loadAndDisplayTasks();
     } else {
-        // User is signed out.
+        isGuestMode = false;
         updateUIAfterAuth(null);
     }
 });
@@ -108,9 +116,12 @@ function updateUIAfterAuth(user) {
         mainAppContainer.classList.remove('hidden');
         userProfileSection.classList.remove('hidden');
 
-        if (user.isAnonymous) {
-            userNameEl.textContent = 'Guest';
-            userAvatar.src = 'https://placehold.co/40x40/64748b/ffffff?text=G'; // Generic guest icon
+        // Toggle UI elements based on guest status
+        addTaskBtn.classList.toggle('hidden', isGuestMode);
+        
+        if (isGuestMode) {
+            userNameEl.textContent = 'Guest (Read-Only)';
+            userAvatar.src = 'https://placehold.co/40x40/64748b/ffffff?text=G';
         } else {
             userNameEl.textContent = user.displayName;
             userAvatar.src = user.photoURL || 'https://placehold.co/40x40/a78bfa/ffffff?text=U';
@@ -119,8 +130,8 @@ function updateUIAfterAuth(user) {
         authOverlay.classList.remove('hidden');
         mainAppContainer.classList.add('hidden');
         userProfileSection.classList.add('hidden');
-        if (unsubscribe) unsubscribe(); // Stop listening to old user's data
-        taskListEl.innerHTML = ''; // Clear the task list
+        if (unsubscribe) unsubscribe();
+        taskListEl.innerHTML = '';
     }
 }
 
@@ -146,8 +157,11 @@ signOutBtn.addEventListener('click', () => {
 
 // --- DATA HANDLING & RENDERING ---
 async function populateInitialData() {
+    // This now only runs for non-guest users who are signing in for the first time.
+    if(isGuestMode) return; 
+
     console.log('Populating database with initial data for new user...');
-    loadingEl.innerText = 'Setting up your list for the first time...';
+    loadingEl.innerText = 'Setting up your personal list for the first time...';
     const initialTasks = parseInitialData(rawData);
     if (initialTasks.length > 0) {
         const batch = writeBatch(db);
@@ -163,8 +177,10 @@ async function populateInitialData() {
 async function loadAndDisplayTasks() {
     loadingEl.style.display = 'block';
     
+    // Check if the database is empty for this user before setting up the listener
     const initialSnapshot = await getDocs(tasksCollectionRef);
-    if (initialSnapshot.empty) {
+    // Only populate data for real users, not guests with an empty list
+    if (initialSnapshot.empty && !isGuestMode) {
         await populateInitialData();
     }
     
@@ -177,6 +193,9 @@ async function loadAndDisplayTasks() {
         if (snapshot.metadata.hasPendingWrites) {
              loadingEl.innerText = 'Syncing...';
              loadingEl.style.display = 'block';
+        } else if (snapshot.empty && isGuestMode) {
+            loadingEl.innerText = 'Could not load guest list. Please ensure the Owner ID is set correctly in app.js.';
+            loadingEl.style.display = 'block';
         } else {
             loadingEl.style.display = 'none';
         }
@@ -189,7 +208,6 @@ async function loadAndDisplayTasks() {
 }
 
 function renderFilteredAndSortedTasks() {
-    // ... (rest of the rendering functions remain the same)
     let tasksToRender = [...allTasks];
     const searchTerm = searchInput.value.toLowerCase();
     if (searchTerm) {
@@ -221,6 +239,9 @@ function renderFilteredAndSortedTasks() {
 function createTaskCardHTML(task) {
     const isCompleted = task.completed ? 'completed' : '';
     const isChecked = task.completed ? 'checked' : '';
+    const isDisabled = isGuestMode ? 'disabled' : ''; // Disable checkbox for guests
+    const controlsHidden = isGuestMode ? 'hidden' : ''; // Hide edit/delete for guests
+
     const typeColor = task.category === 'project' ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200' : 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200';
     const subCatCap = task.subCategory ? task.subCategory.charAt(0).toUpperCase() + task.subCategory.slice(1) : '';
     const catCap = task.category ? task.category.charAt(0).toUpperCase() + task.category.slice(1) : '';
@@ -231,7 +252,7 @@ function createTaskCardHTML(task) {
             <div class="p-4 flex-grow">
                 <div class="flex justify-between items-start">
                    <p class="task-content font-bold text-lg text-gray-800 dark:text-gray-100 flex-1 mr-4">${task.content}</p>
-                   <input type="checkbox" data-id="${task.id}" class="task-checkbox h-6 w-6 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 cursor-pointer" ${isChecked}>
+                   <input type="checkbox" data-id="${task.id}" class="task-checkbox h-6 w-6 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 cursor-pointer" ${isChecked} ${isDisabled}>
                 </div>
                 ${task.comment ? `<p class="text-sm text-gray-500 dark:text-gray-400 mt-2">${task.comment}</p>` : ''}
             </div>
@@ -243,7 +264,7 @@ function createTaskCardHTML(task) {
                     </span>
                     <span class="px-2 py-1 text-xs font-medium rounded-full ${typeColor}">${fullTypeLabel}</span>
                 </div>
-                <div>
+                <div class="${controlsHidden}">
                     <button data-id="${task.id}" class="edit-btn text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"><i class="fas fa-edit"></i></button>
                     <button data-id="${task.id}" class="delete-btn text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors ml-2"><i class="fas fa-trash"></i></button>
                 </div>
@@ -254,6 +275,7 @@ function createTaskCardHTML(task) {
 
 // --- MODAL HANDLING ---
 function openModal(task = null) {
+    if (isGuestMode) return; // Prevent opening modal in guest mode
     taskForm.reset();
     if (task) {
         modalTitle.innerText = "Edit Task";
@@ -294,6 +316,8 @@ modalBackdrop.addEventListener('click', closeModal);
 
 taskForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (isGuestMode) return; // Extra security check
+
     const saveBtn = e.target.querySelector('#saveBtn');
     const originalText = saveBtn.innerHTML;
     saveBtn.disabled = true;
@@ -339,6 +363,8 @@ taskForm.addEventListener('submit', async (e) => {
 });
 
 taskListEl.addEventListener('click', async (e) => {
+    if (isGuestMode) return; // Prevent any clicks in guest mode
+
     const card = e.target.closest('.task-card');
     if (!card) return;
     const id = card.id.replace('task-','');
@@ -386,7 +412,7 @@ function initializeApp() {
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     applyTheme(savedTheme || (prefersDark ? 'dark' : 'light'));
-    // Authentication is handled by the onAuthStateChanged listener
+    // Authentication is now handled by the onAuthStateChanged listener, no need to call initializeAuth() here
 }
 
 initializeApp();
