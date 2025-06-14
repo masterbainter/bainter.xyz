@@ -413,22 +413,14 @@
         }
         
         // --- DATA HANDLING & RENDERING (OPTIMIZED) ---
-
-        /**
-         * Attaches the real-time listener. This is now the primary way data is loaded and updated.
-         */
         async function loadAndDisplayTasks() {
             loadingEl.style.display = 'block';
-
-            // Check if initial data needs to be populated
             const initialCheck = await getDocs(tasksCollectionRef);
             if (initialCheck.empty) {
                 await populateInitialData();
             }
             
-            unsubscribe(); // Unsubscribe from any previous listener
-            
-            // This listener will now handle initial load AND all subsequent updates efficiently.
+            unsubscribe();
             unsubscribe = onSnapshot(tasksCollectionRef, (snapshot) => {
                 snapshot.docChanges().forEach((change) => {
                     const taskData = { id: change.doc.id, ...change.doc.data() };
@@ -443,26 +435,17 @@
                         allTasks = allTasks.filter(task => task.id !== taskData.id);
                     }
                 });
-
-                // Re-render the full list. This is a compromise for simplicity
-                // but still benefits from the faster initial load.
                 renderFilteredAndSortedTasks();
-
                 loadingEl.style.display = 'none';
                 controlsEl.style.display = 'flex';
-                
             }, (error) => {
                 console.error("Error with real-time listener:", error);
                 loadingEl.innerText = "Error loading tasks.";
             });
         }
 
-        /**
-         * Renders the task list based on the current `allTasks` array and active filters/sorts.
-         */
         function renderFilteredAndSortedTasks() {
             let tasksToRender = [...allTasks];
-            
             const searchTerm = searchInput.value.toLowerCase();
             if (searchTerm) {
                 tasksToRender = tasksToRender.filter(task => 
@@ -470,17 +453,14 @@
                     (task.comment && task.comment.toLowerCase().includes(searchTerm))
                 );
             }
-            
             const filterValue = filterSelect.value;
             if (filterValue !== 'all') {
                 tasksToRender = tasksToRender.filter(task => task.category === filterValue);
             }
-
             const subCategoryValue = subCategoryFilter.value;
             if (subCategoryValue !== 'all') {
                 tasksToRender = tasksToRender.filter(task => task.subCategory === subCategoryValue);
             }
-
             tasksToRender.sort((a, b) => {
                 if (a.completed !== b.completed) return a.completed ? 1 : -1;
                 switch (sortSelect.value) {
@@ -490,7 +470,6 @@
                     default: return 0;
                 }
             });
-            
             taskListEl.innerHTML = tasksToRender.map(createTaskCardHTML).join('');
         }
 
@@ -651,25 +630,26 @@
             }
         });
 
-        // --- THEME TOGGLE (Corrected) ---
-        function updateThemeIcons() {
-            if (document.documentElement.classList.contains('dark')) {
-                themeToggleLightIcon.classList.remove('hidden');
-                themeToggleDarkIcon.classList.add('hidden');
-            } else {
-                themeToggleLightIcon.classList.add('hidden');
-                themeToggleDarkIcon.classList.remove('hidden');
-            }
+        // --- THEME TOGGLE (Corrected Logic) ---
+        function updateThemeUI() {
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            themeToggleLightIcon.classList.toggle('hidden', isDarkMode);
+            themeToggleDarkIcon.classList.toggle('hidden', !isDarkMode);
         }
 
         themeToggleBtn.addEventListener('click', () => {
-            document.documentElement.classList.toggle('dark');
-            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
-            updateThemeIcons();
+            // Toggle the dark class on the root <html> element
+            const isDark = document.documentElement.classList.toggle('dark');
+            // Save the user's preference to localStorage
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            // Update the button icon to reflect the new state
+            updateThemeUI();
         });
         
-        // Initial setup on page load
-        updateThemeIcons();
+        // --- INITIALIZATION ---
+        // Set the correct icon on initial page load
+        updateThemeUI();
+        // Start the authentication process
         initializeAuth();
 
     </script>
