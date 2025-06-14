@@ -222,7 +222,7 @@
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, writeBatch, deleteDoc, updateDoc, onSnapshot, getDocs, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, collection, writeBatch, deleteDoc, updateDoc, onSnapshot, getDocs, enableIndexedDbPersistence, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         // --- PWA Service Worker Registration ---
         if ('serviceWorker' in navigator) {
@@ -433,28 +433,19 @@
                 snapshot.docChanges().forEach((change) => {
                     const taskData = { id: change.doc.id, ...change.doc.data() };
                     if (change.type === "added") {
-                        // Add task to our local array and to the DOM
                         allTasks.push(taskData);
-                        addTaskToDOM(taskData);
                     }
                     if (change.type === "modified") {
-                        // Update the local array
                         const index = allTasks.findIndex(task => task.id === taskData.id);
-                        if (index > -1) {
-                            allTasks[index] = taskData;
-                        }
-                        // Update the card in the DOM
-                        updateTaskInDOM(taskData);
+                        if (index > -1) allTasks[index] = taskData;
                     }
                     if (change.type === "removed") {
-                         // Remove from local array
                         allTasks = allTasks.filter(task => task.id !== taskData.id);
-                         // Remove card from the DOM
-                        removeTaskFromDOM(taskData.id);
                     }
                 });
 
-                // After processing changes, ensure the view is correctly sorted and filtered.
+                // Re-render the full list. This is a compromise for simplicity
+                // but still benefits from the faster initial load.
                 renderFilteredAndSortedTasks();
 
                 loadingEl.style.display = 'none';
@@ -468,12 +459,10 @@
 
         /**
          * Renders the task list based on the current `allTasks` array and active filters/sorts.
-         * This function is now only called when sorting or filtering changes.
          */
         function renderFilteredAndSortedTasks() {
             let tasksToRender = [...allTasks];
             
-            // 1. Filter by search term
             const searchTerm = searchInput.value.toLowerCase();
             if (searchTerm) {
                 tasksToRender = tasksToRender.filter(task => 
@@ -482,23 +471,19 @@
                 );
             }
             
-            // 2. Filter by category
             const filterValue = filterSelect.value;
             if (filterValue !== 'all') {
                 tasksToRender = tasksToRender.filter(task => task.category === filterValue);
             }
 
-            // 3. Filter by sub-category
             const subCategoryValue = subCategoryFilter.value;
             if (subCategoryValue !== 'all') {
                 tasksToRender = tasksToRender.filter(task => task.subCategory === subCategoryValue);
             }
 
-            // 4. Sort
-            const sortValue = sortSelect.value;
             tasksToRender.sort((a, b) => {
                 if (a.completed !== b.completed) return a.completed ? 1 : -1;
-                switch (sortValue) {
+                switch (sortSelect.value) {
                     case 'priority': return a.priority - b.priority;
                     case 'content-asc': return a.content.localeCompare(b.content);
                     case 'content-desc': return b.content.localeCompare(a.content);
@@ -507,41 +492,6 @@
             });
             
             taskListEl.innerHTML = tasksToRender.map(createTaskCardHTML).join('');
-        }
-        
-        /**
-         * Creates and adds a single task card to the DOM.
-         * @param {object} task - The task data.
-         */
-        function addTaskToDOM(task) {
-            const existingCard = document.getElementById(`task-${task.id}`);
-            if (existingCard) return; // Don't add if it already exists
-
-            const cardHTML = createTaskCardHTML(task);
-            // Insert the new card's HTML at the end of the list. Sorting will fix its position.
-            taskListEl.insertAdjacentHTML('beforeend', cardHTML);
-        }
-
-        /**
-         * Finds and updates an existing task card in the DOM.
-         * @param {object} task - The updated task data.
-         */
-        function updateTaskInDOM(task) {
-            const cardToUpdate = document.getElementById(`task-${task.id}`);
-            if (cardToUpdate) {
-                cardToUpdate.outerHTML = createTaskCardHTML(task);
-            }
-        }
-
-        /**
-         * Finds and removes a task card from the DOM by its ID.
-         * @param {string} taskId - The ID of the task to remove.
-         */
-        function removeTaskFromDOM(taskId) {
-            const cardToRemove = document.getElementById(`task-${taskId}`);
-            if (cardToRemove) {
-                cardToRemove.remove();
-            }
         }
 
         async function populateInitialData() {
@@ -632,6 +582,11 @@
         
         taskForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const saveBtn = e.target.querySelector('#saveBtn');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = 'Saving...';
+            
             const id = document.getElementById('taskId').value;
             const taskData = {
                 content: document.getElementById('content').value,
@@ -656,6 +611,18 @@
                 closeModal();
             } catch (error) {
                 console.error("Error saving task: ", error);
+                saveBtn.innerHTML = 'Error!';
+                saveBtn.classList.add('bg-red-500');
+                setTimeout(() => {
+                    saveBtn.innerHTML = originalText;
+                    saveBtn.classList.remove('bg-red-500');
+                    saveBtn.disabled = false;
+                }, 3000);
+            } finally {
+                 if (!saveBtn.classList.contains('bg-red-500')) {
+                    saveBtn.innerHTML = originalText;
+                    saveBtn.disabled = false;
+                }
             }
         });
 
@@ -696,17 +663,8 @@
         }
 
         themeToggleBtn.addEventListener('click', () => {
-            // Toggle the class on the <html> element
             document.documentElement.classList.toggle('dark');
-            
-            // Check the new state and save to localStorage
-            if (document.documentElement.classList.contains('dark')) {
-                localStorage.setItem('theme', 'dark');
-            } else {
-                localStorage.setItem('theme', 'light');
-            }
-            
-            // Update the icons to match the new state
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
             updateThemeIcons();
         });
         
