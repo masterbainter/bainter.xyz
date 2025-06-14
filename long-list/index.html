@@ -196,14 +196,15 @@
     
     <script type="module">
         // Firebase Imports
-        import { initializeApp, enableLogging } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, writeBatch, deleteDoc, updateDoc, onSnapshot, getDocs, enablePersistence, CACHE_SIZE_UNLIMITED } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, collection, writeBatch, deleteDoc, updateDoc, onSnapshot, getDocs, enableIndexedDbPersistence, CACHE_SIZE_UNLIMITED } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         // --- PWA Service Worker Registration ---
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
+                // Use relative path for GitHub Pages compatibility
+                navigator.serviceWorker.register('sw.js')
                     .then(registration => {
                         console.log('ServiceWorker registration successful with scope: ', registration.scope);
                     })
@@ -328,19 +329,18 @@
             appId: "1:754582576816:web:6c2c2c5c0dd774f8122575",
             measurementId: "G-03560RG2S2"
         };
-        const appId = 'checklist-app-trevor';
-
+        
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
         // --- ENABLE OFFLINE PERSISTENCE ---
-        enablePersistence(db, { synchronizeTabs: true, cacheSizeBytes: CACHE_SIZE_UNLIMITED })
+        enableIndexedDbPersistence(db, { synchronizeTabs: true })
             .catch((err) => {
                 if (err.code == 'failed-precondition') {
-                    console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+                    console.warn('Persistence failed: multiple tabs open.');
                 } else if (err.code == 'unimplemented') {
-                    console.warn('The current browser does not support all of the features required to enable persistence.');
+                    console.warn('Persistence failed: browser does not support it.');
                 }
             });
 
@@ -370,13 +370,12 @@
         // --- AUTHENTICATION ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
+                // User is signed in.
                 userId = user.uid;
-                tasksCollectionRef = collection(db, `users/${userId}/tasks`); // Simplified path
+                tasksCollectionRef = collection(db, `users/${userId}/tasks`);
                 await loadAndDisplayTasks();
-            } else {
-                // If no user, sign in anonymously
-                initializeAuth();
             }
+            // No else needed; signInAnonymously is called once below.
         });
 
         async function initializeAuth() {
@@ -387,13 +386,11 @@
                 loadingEl.innerText = "Error: Could not authenticate.";
             }
         }
-
-
+        
         // --- DATA HANDLING & RENDERING ---
         async function loadAndDisplayTasks() {
             loadingEl.style.display = 'block';
             try {
-                 // Check for existing data before populating
                 const querySnapshot = await getDocs(tasksCollectionRef);
                 if (querySnapshot.empty) {
                     await populateInitialData();
@@ -589,6 +586,9 @@
                 if (taskToEdit) openModal(taskToEdit);
             }
         });
+        
+        // Kick off the authentication process immediately on script load.
+        initializeAuth();
 
     </script>
 

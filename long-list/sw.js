@@ -1,7 +1,7 @@
-const CACHE_NAME = 'checklist-pwa-v1';
+const CACHE_NAME = 'checklist-pwa-v2'; // Changed cache name to force update
 const urlsToCache = [
-  '/',
-  '/index.html',
+  './', // Use relative paths for GitHub Pages
+  './index.html',
   'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
@@ -12,7 +12,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Opened cache');
+        console.log('Opened cache and caching app shell');
         return cache.addAll(urlsToCache);
       })
   );
@@ -20,6 +20,16 @@ self.addEventListener('install', event => {
 
 // Intercept fetch requests
 self.addEventListener('fetch', event => {
+  const requestUrl = new URL(event.request.url);
+
+  // --- Crucial Fix ---
+  // If the request is for the database, don't handle it with the service worker.
+  // Let it pass directly to the network.
+  if (requestUrl.hostname === 'firestore.googleapis.com') {
+    return; 
+  }
+
+  // For all other GET requests, use a "cache-first" strategy.
   event.respondWith(
     caches.match(event.request)
       .then(response => {
@@ -27,11 +37,9 @@ self.addEventListener('fetch', event => {
         if (response) {
           return response;
         }
-
         // Not in cache - fetch from network
         return fetch(event.request);
-      }
-    )
+      })
   );
 });
 
@@ -43,6 +51,7 @@ self.addEventListener('activate', event => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
+            console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
