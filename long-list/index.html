@@ -222,7 +222,7 @@
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, writeBatch, deleteDoc, updateDoc, onSnapshot, getDocs, enableIndexedDbPersistence, CACHE_SIZE_UNLIMITED } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, collection, writeBatch, deleteDoc, updateDoc, onSnapshot, getDocs, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         // --- PWA Service Worker Registration ---
         if ('serviceWorker' in navigator) {
@@ -412,46 +412,68 @@
             }
         }
         
-        // --- DATA HANDLING & RENDERING ---
+        // --- DATA HANDLING & RENDERING (OPTIMIZED) ---
+
+        /**
+         * Attaches the real-time listener. This is now the primary way data is loaded and updated.
+         */
         async function loadAndDisplayTasks() {
             loadingEl.style.display = 'block';
-            try {
-                const querySnapshot = await getDocs(tasksCollectionRef);
-                if (querySnapshot.empty) {
-                    await populateInitialData();
-                }
 
-                unsubscribe();
-                unsubscribe = onSnapshot(tasksCollectionRef, (snapshot) => {
-                    allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    renderTasks();
-                    loadingEl.style.display = 'none';
-                    controlsEl.style.display = 'flex';
-                }, (error) => {
-                    console.error("Error with real-time listener:", error);
-                    loadingEl.innerText = "Error loading tasks.";
+            // Check if initial data needs to be populated
+            const initialCheck = await getDocs(tasksCollectionRef);
+            if (initialCheck.empty) {
+                await populateInitialData();
+            }
+            
+            unsubscribe(); // Unsubscribe from any previous listener
+            
+            // This listener will now handle initial load AND all subsequent updates efficiently.
+            unsubscribe = onSnapshot(tasksCollectionRef, (snapshot) => {
+                snapshot.docChanges().forEach((change) => {
+                    const taskData = { id: change.doc.id, ...change.doc.data() };
+                    if (change.type === "added") {
+                        // Add task to our local array and to the DOM
+                        allTasks.push(taskData);
+                        addTaskToDOM(taskData);
+                    }
+                    if (change.type === "modified") {
+                        // Update the local array
+                        const index = allTasks.findIndex(task => task.id === taskData.id);
+                        if (index > -1) {
+                            allTasks[index] = taskData;
+                        }
+                        // Update the card in the DOM
+                        updateTaskInDOM(taskData);
+                    }
+                    if (change.type === "removed") {
+                         // Remove from local array
+                        allTasks = allTasks.filter(task => task.id !== taskData.id);
+                         // Remove card from the DOM
+                        removeTaskFromDOM(taskData.id);
+                    }
                 });
-            } catch (error) {
-                console.error("Error loading tasks:", error);
+
+                // After processing changes, ensure the view is correctly sorted and filtered.
+                renderFilteredAndSortedTasks();
+
+                loadingEl.style.display = 'none';
+                controlsEl.style.display = 'flex';
+                
+            }, (error) => {
+                console.error("Error with real-time listener:", error);
                 loadingEl.innerText = "Error loading tasks.";
-            }
-        }
-        
-        async function populateInitialData() {
-            const initialTasks = parseInitialData(rawData);
-            if (initialTasks.length > 0) {
-                const batch = writeBatch(db);
-                initialTasks.forEach(task => {
-                    const newDocRef = doc(tasksCollectionRef);
-                    batch.set(newDocRef, task);
-                });
-                await batch.commit();
-            }
+            });
         }
 
-        function renderTasks() {
+        /**
+         * Renders the task list based on the current `allTasks` array and active filters/sorts.
+         * This function is now only called when sorting or filtering changes.
+         */
+        function renderFilteredAndSortedTasks() {
             let tasksToRender = [...allTasks];
             
+            // 1. Filter by search term
             const searchTerm = searchInput.value.toLowerCase();
             if (searchTerm) {
                 tasksToRender = tasksToRender.filter(task => 
@@ -460,16 +482,19 @@
                 );
             }
             
+            // 2. Filter by category
             const filterValue = filterSelect.value;
             if (filterValue !== 'all') {
                 tasksToRender = tasksToRender.filter(task => task.category === filterValue);
             }
 
+            // 3. Filter by sub-category
             const subCategoryValue = subCategoryFilter.value;
             if (subCategoryValue !== 'all') {
                 tasksToRender = tasksToRender.filter(task => task.subCategory === subCategoryValue);
             }
 
+            // 4. Sort
             const sortValue = sortSelect.value;
             tasksToRender.sort((a, b) => {
                 if (a.completed !== b.completed) return a.completed ? 1 : -1;
@@ -482,6 +507,53 @@
             });
             
             taskListEl.innerHTML = tasksToRender.map(createTaskCardHTML).join('');
+        }
+        
+        /**
+         * Creates and adds a single task card to the DOM.
+         * @param {object} task - The task data.
+         */
+        function addTaskToDOM(task) {
+            const existingCard = document.getElementById(`task-${task.id}`);
+            if (existingCard) return; // Don't add if it already exists
+
+            const cardHTML = createTaskCardHTML(task);
+            // Insert the new card's HTML at the end of the list. Sorting will fix its position.
+            taskListEl.insertAdjacentHTML('beforeend', cardHTML);
+        }
+
+        /**
+         * Finds and updates an existing task card in the DOM.
+         * @param {object} task - The updated task data.
+         */
+        function updateTaskInDOM(task) {
+            const cardToUpdate = document.getElementById(`task-${task.id}`);
+            if (cardToUpdate) {
+                cardToUpdate.outerHTML = createTaskCardHTML(task);
+            }
+        }
+
+        /**
+         * Finds and removes a task card from the DOM by its ID.
+         * @param {string} taskId - The ID of the task to remove.
+         */
+        function removeTaskFromDOM(taskId) {
+            const cardToRemove = document.getElementById(`task-${taskId}`);
+            if (cardToRemove) {
+                cardToRemove.remove();
+            }
+        }
+
+        async function populateInitialData() {
+            const initialTasks = parseInitialData(rawData);
+            if (initialTasks.length > 0) {
+                const batch = writeBatch(db);
+                initialTasks.forEach(task => {
+                    const newDocRef = doc(tasksCollectionRef);
+                    batch.set(newDocRef, task);
+                });
+                await batch.commit();
+            }
         }
 
         function createTaskCardHTML(task) {
@@ -549,10 +621,10 @@
         }
 
         // --- EVENT LISTENERS ---
-        searchInput.addEventListener('input', renderTasks);
-        sortSelect.addEventListener('change', renderTasks);
-        filterSelect.addEventListener('change', renderTasks);
-        subCategoryFilter.addEventListener('change', renderTasks);
+        searchInput.addEventListener('input', renderFilteredAndSortedTasks);
+        sortSelect.addEventListener('change', renderFilteredAndSortedTasks);
+        filterSelect.addEventListener('change', renderFilteredAndSortedTasks);
+        subCategoryFilter.addEventListener('change', renderFilteredAndSortedTasks);
 
         addTaskBtn.addEventListener('click', () => openModal());
         cancelBtn.addEventListener('click', closeModal);
@@ -612,21 +684,34 @@
             }
         });
 
-        // --- THEME TOGGLE ---
-        if (document.documentElement.classList.contains('dark')) {
-            themeToggleLightIcon.classList.remove('hidden');
-        } else {
-            themeToggleDarkIcon.classList.remove('hidden');
+        // --- THEME TOGGLE (Corrected) ---
+        function updateThemeIcons() {
+            if (document.documentElement.classList.contains('dark')) {
+                themeToggleLightIcon.classList.remove('hidden');
+                themeToggleDarkIcon.classList.add('hidden');
+            } else {
+                themeToggleLightIcon.classList.add('hidden');
+                themeToggleDarkIcon.classList.remove('hidden');
+            }
         }
 
         themeToggleBtn.addEventListener('click', () => {
-            themeToggleDarkIcon.classList.toggle('hidden');
-            themeToggleLightIcon.classList.toggle('hidden');
-            const isDark = document.documentElement.classList.toggle('dark');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            // Toggle the class on the <html> element
+            document.documentElement.classList.toggle('dark');
+            
+            // Check the new state and save to localStorage
+            if (document.documentElement.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+            } else {
+                localStorage.setItem('theme', 'light');
+            }
+            
+            // Update the icons to match the new state
+            updateThemeIcons();
         });
         
-        // Kick off the authentication process immediately on script load.
+        // Initial setup on page load
+        updateThemeIcons();
         initializeAuth();
 
     </script>
