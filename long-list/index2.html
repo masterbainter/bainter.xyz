@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trevor's Checklist</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#3b82f6"/>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Checklist">
+    <meta name="application-name" content="Checklist">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon.png">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        html { transition: background-color 0.3s ease, color 0.3s ease; }
+        body { font-family: 'Inter', sans-serif; }
+        .task-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+        .task-card.completed { background-color: #f3f4f6; opacity: 0.7; }
+        .dark .task-card.completed { background-color: #374151; opacity: 0.5; }
+        .task-card.completed .task-content { text-decoration: line-through; color: #6b7280; }
+        .dark .task-card.completed .task-content { color: #9ca3af; }
+        .priority-1 { border-left-color: #ef4444; } .priority-2 { border-left-color: #f97316; } .priority-3 { border-left-color: #3b82f6; } .priority-4 { border-left-color: #84cc16; }
+        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: #f1f1f1; } .dark ::-webkit-scrollbar-track { background: #2d3748; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; } ::-webkit-scrollbar-thumb:hover { background: #555; }
+        .modal-backdrop { background-color: rgba(0,0,0,0.5); transition: opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s ease; }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
+
+    <div id="app" class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <header class="flex flex-col md:flex-row justify-between items-center mb-6">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 mb-4 md:mb-0">
+                <i class="fas fa-check-double text-blue-500"></i> Trevor's Checklist
+            </h1>
+            <div class="flex items-center gap-2 md:gap-4">
+                 <button id="theme-toggle" type="button" class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
+                    <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                    <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.121-3.536a1 1 0 011.414 0l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 010-1.414zM4.05 16.95a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zM10 18a1 1 0 01-1-1v-1a1 1 0 112 0v1a1 1 0 01-1 1zM3.05 4.95a1 1 0 010 1.414l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 0zM16.95 4.05a1 1 0 011.414 0l.707.707a1 1 0 01-1.414 1.414l-.707-.707a1 1 0 010-1.414zM2 10a1 1 0 01-1-1V9a1 1 0 112 0v1a1 1 0 01-1 1z"></path></svg>
+                </button>
+                <button id="addTaskBtn" class="w-full md:w-auto bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition-transform transform hover:scale-105">
+                    <i class="fas fa-plus mr-2"></i>Add New Task
+                </button>
+            </div>
+        </header>
+        <div id="loading" class="text-center py-10">
+            <p class="text-gray-500 dark:text-gray-400">Loading tasks...</p>
+        </div>
+        <div id="controls" class="hidden mb-6 flex flex-col md:flex-row gap-4 items-center">
+            <div class="relative flex-grow w-full">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><i class="fas fa-search"></i></span>
+                <input type="text" id="searchInput" placeholder="Search tasks..." class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="flex gap-4 w-full md:w-auto">
+                <select id="sortSelect" class="w-full md:w-auto bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="priority">Sort by Priority</option><option value="content-asc">Sort by Name (A-Z)</option><option value="content-desc">Sort by Name (Z-A)</option>
+                </select>
+                <select id="filterSelect" class="w-full md:w-auto bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="all">All Categories</option><option value="task">Tasks</option><option value="project">Projects</option>
+                </select>
+                 <select id="subCategoryFilter" class="w-full md:w-auto bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="all">All Levels</option><option value="mini">Mini</option><option value="standard">Standard</option><option value="major">Major</option>
+                </select>
+            </div>
+        </div>
+        <main id="taskList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></main>
+    </div>
+    <div id="taskModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
+        <div class="modal-backdrop fixed inset-0"></div>
+        <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-md mx-auto z-10 transform scale-95">
+            <form id="taskForm" class="p-6">
+                <h2 id="modalTitle" class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Add New Task</h2>
+                <input type="hidden" id="taskId">
+                <div class="mb-4">
+                    <label for="content" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Task Description</label>
+                    <input type="text" id="content" class="w-full p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg" required>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                     <div>
+                        <label for="category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                        <select id="category" class="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 rounded-lg" required>
+                            <option value="task">Task</option><option value="project">Project</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="subCategory" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Level</label>
+                        <select id="subCategory" class="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 rounded-lg" required>
+                            <option value="mini">Mini</option><option value="standard">Standard</option><option value="major">Major</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="priority" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
+                        <select id="priority" class="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 rounded-lg" required>
+                            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                        </select>
+                    </div>
+                     <div>
+                        <label for="duration" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duration</label>
+                        <input type="number" id="duration" class="w-full p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg" required>
+                    </div>
+                </div>
+                 <div class="mb-4">
+                    <label for="durationUnit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Unit</label>
+                    <select id="durationUnit" class="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 rounded-lg" required>
+                        <option value="minute">Minute(s)</option><option value="hour">Hour(s)</option><option value="day">Day(s)</option>
+                    </select>
+                </div>
+                <div class="mb-6">
+                    <label for="comment" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Comment</label>
+                    <input type="text" id="comment" class="w-full p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg">
+                </div>
+                <div class="flex justify-end gap-4">
+                    <button type="button" id="cancelBtn" class="bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-lg">Cancel</button>
+                    <button type="submit" id="saveBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">Save Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- SCRIPT LOADING WITH CACHE BUSTING -->
+    <script type="module" src="./app.js?v=9"></script>
+
+</body>
+</html>
