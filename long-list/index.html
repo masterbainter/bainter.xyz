@@ -3,10 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#3b82f6"/>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Checklist">
+    <meta name="application-name" content="Checklist">
+    
     <title>Trevor's Checklist</title>
+    
+    <!-- Link to Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- PWA Icons -->
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/3b82f6/ffffff?text=CL">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://placehold.co/192x192/3b82f6/ffffff?text=CL">
+    <link rel="icon" type="image/png" sizes="512x512" href="https://placehold.co/512x512/3b82f6/ffffff?text=CL">
+
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -178,10 +196,23 @@
     
     <script type="module">
         // Firebase Imports
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, addDoc, getDoc, getDocs, onSnapshot, collection, writeBatch, deleteDoc, updateDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp, enableLogging } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, writeBatch, deleteDoc, updateDoc, onSnapshot, getDocs, enablePersistence, CACHE_SIZE_UNLIMITED } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
+        // --- PWA Service Worker Registration ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+
         // --- INITIAL DATA & PARSER ---
         const rawData = `
         TYPE Desc.TYPECategoryCONTENTPRIORITYRESPONSIBLEDATEDURATIONDURATION_UNITMoney?Comment
@@ -251,10 +282,6 @@
         miniprojectMaddox Athletic Program Buildout2Trevor 1day$
         `;
         
-        /**
-         * Parses the raw text data into a structured array of task objects.
-         * The data structure is now split into category and subCategory.
-         */
         function parseInitialData(text) {
             const tasks = [];
             const typeKeywords = ['standardtask', 'standardproject', 'majortask', 'majorproject', 'miniproject', 'minitask', 'stanadrdtask', 'Standardproject', 'Majortask', 'MajorProject'];
@@ -291,22 +318,32 @@
             return tasks;
         }
 
-
         // --- FIREBASE SETUP ---
         const firebaseConfig = {
-        apiKey: "AIzaSyD4siULVs184mF6tkcuTRzybRPGxApu5TQ",
-        authDomain: "bainter-xyz.firebaseapp.com",
-        projectId: "bainter-xyz",
-        storageBucket: "bainter-xyz.firebasestorage.app",
-        messagingSenderId: "754582576816",
-        appId: "1:754582576816:web:6c2c2c5c0dd774f8122575",
-        measurementId: "G-03560RG2S2"
+            apiKey: "AIzaSyD4siULVs184mF6tkcuTRzybRPGxApu5TQ",
+            authDomain: "bainter-xyz.firebaseapp.com",
+            projectId: "bainter-xyz",
+            storageBucket: "bainter-xyz.appspot.com",
+            messagingSenderId: "754582576816",
+            appId: "1:754582576816:web:6c2c2c5c0dd774f8122575",
+            measurementId: "G-03560RG2S2"
         };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'checklist-app-default';
+        const appId = 'checklist-app-trevor';
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+
+        // --- ENABLE OFFLINE PERSISTENCE ---
+        enablePersistence(db, { synchronizeTabs: true, cacheSizeBytes: CACHE_SIZE_UNLIMITED })
+            .catch((err) => {
+                if (err.code == 'failed-precondition') {
+                    console.warn('Multiple tabs open, persistence can only be enabled in one tab at a time.');
+                } else if (err.code == 'unimplemented') {
+                    console.warn('The current browser does not support all of the features required to enable persistence.');
+                }
+            });
+
         
         let userId;
         let tasksCollectionRef;
@@ -334,39 +371,43 @@
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 userId = user.uid;
-                tasksCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/tasks`);
+                tasksCollectionRef = collection(db, `users/${userId}/tasks`); // Simplified path
                 await loadAndDisplayTasks();
+            } else {
+                // If no user, sign in anonymously
+                initializeAuth();
             }
         });
 
         async function initializeAuth() {
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                await signInAnonymously(auth);
             } catch (error) {
-                console.error("Authentication failed:", error);
+                console.error("Anonymous authentication failed:", error);
                 loadingEl.innerText = "Error: Could not authenticate.";
             }
         }
+
 
         // --- DATA HANDLING & RENDERING ---
         async function loadAndDisplayTasks() {
             loadingEl.style.display = 'block';
             try {
+                 // Check for existing data before populating
                 const querySnapshot = await getDocs(tasksCollectionRef);
                 if (querySnapshot.empty) {
                     await populateInitialData();
                 }
 
-                unsubscribe(); // Detach old listener
+                unsubscribe();
                 unsubscribe = onSnapshot(tasksCollectionRef, (snapshot) => {
                     allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     renderTasks();
                     loadingEl.style.display = 'none';
                     controlsEl.style.display = 'flex';
+                }, (error) => {
+                    console.error("Error with real-time listener:", error);
+                    loadingEl.innerText = "Error loading tasks.";
                 });
             } catch (error) {
                 console.error("Error loading tasks:", error);
@@ -389,7 +430,6 @@
         function renderTasks() {
             let tasksToRender = [...allTasks];
             
-            // 1. Filter by search
             const searchTerm = searchInput.value.toLowerCase();
             if (searchTerm) {
                 tasksToRender = tasksToRender.filter(task => 
@@ -398,19 +438,16 @@
                 );
             }
             
-            // 2. Filter by category
             const filterValue = filterSelect.value;
             if (filterValue !== 'all') {
                 tasksToRender = tasksToRender.filter(task => task.category === filterValue);
             }
 
-            // 3. Filter by sub-category
             const subCategoryValue = subCategoryFilter.value;
             if (subCategoryValue !== 'all') {
                 tasksToRender = tasksToRender.filter(task => task.subCategory === subCategoryValue);
             }
 
-            // 4. Sort
             const sortValue = sortSelect.value;
             tasksToRender.sort((a, b) => {
                 if (a.completed !== b.completed) return a.completed ? 1 : -1;
@@ -443,7 +480,7 @@
                         ${task.comment ? `<p class="text-sm text-gray-500 mt-2">${task.comment}</p>` : ''}
                     </div>
                     <div class="p-4 bg-gray-50 rounded-b-lg border-t border-gray-200 flex justify-between items-center text-sm">
-                        <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-4 flex-wrap">
                             <span class="font-semibold text-gray-600">
                                 <i class="fas fa-clock mr-1 text-gray-400"></i>
                                 ${task.duration} ${task.durationUnit}(s)
@@ -515,7 +552,7 @@
 
             try {
                 if (id) {
-                    const docRef = doc(db, `artifacts/${appId}/users/${userId}/tasks`, id);
+                    const docRef = doc(db, `users/${userId}/tasks`, id);
                     await updateDoc(docRef, taskData);
                 } else {
                     taskData.completed = false;
@@ -529,18 +566,19 @@
         });
 
         taskListEl.addEventListener('click', async (e) => {
-            const id = e.target.closest('.task-card')?.id.replace('task-','');
-            if (!id) return;
-            
-            const docRef = doc(db, `artifacts/${appId}/users/${userId}/tasks`, id);
+            const card = e.target.closest('.task-card');
+            if (!card) return;
+            const id = card.id.replace('task-','');
             
             if (e.target.matches('.task-checkbox')) {
+                const docRef = doc(db, `users/${userId}/tasks`, id);
                 await updateDoc(docRef, { completed: e.target.checked });
             }
             
             if (e.target.closest('.delete-btn')) {
                 e.preventDefault();
                 if (window.confirm('Are you sure you want to delete this task?')) {
+                    const docRef = doc(db, `users/${userId}/tasks`, id);
                     await deleteDoc(docRef);
                 }
             }
@@ -551,9 +589,6 @@
                 if (taskToEdit) openModal(taskToEdit);
             }
         });
-
-        // Initialize authentication on page load
-        initializeAuth();
 
     </script>
 
