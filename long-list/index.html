@@ -293,7 +293,15 @@
 
 
         // --- FIREBASE SETUP ---
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "DEMO", authDomain: "DEMO", projectId: "DEMO" };
+        const firebaseConfig = {
+        apiKey: "AIzaSyD4siULVs184mF6tkcuTRzybRPGxApu5TQ",
+        authDomain: "bainter-xyz.firebaseapp.com",
+        projectId: "bainter-xyz",
+        storageBucket: "bainter-xyz.firebasestorage.app",
+        messagingSenderId: "754582576816",
+        appId: "1:754582576816:web:6c2c2c5c0dd774f8122575",
+        measurementId: "G-03560RG2S2"
+        };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'checklist-app-default';
 
         const app = initializeApp(firebaseConfig);
