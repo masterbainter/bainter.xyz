@@ -1,44 +1,17 @@
-// Firebase Imports
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, doc, collection, deleteDoc, updateDoc, onSnapshot, getDocs, enableIndexedDbPersistence, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+// Import only the necessary functions from Firebase and our init file
+import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { db, auth } from './firebase-init.js'; // Import our initialized services
 
 // --- PWA Service Worker Registration ---
-// Temporarily disabled to ensure a clean load. We will re-enable this later.
+// Temporarily disabled. We will re-enable this after the app loads correctly.
 // if ('serviceWorker' in navigator) {
 //     window.addEventListener('load', () => {
 //         navigator.serviceWorker.register('./sw.js')
-//             .then(reg => console.log('Service worker registered', reg))
-//             .catch(err => console.error('Service worker registration failed', err));
+//             .then(reg => console.log('Service Worker Registered.', reg))
+//             .catch(err => console.error('Service Worker registration failed:', err));
 //     });
 // }
-
-// --- FIREBASE SETUP ---
-const firebaseConfig = {
-    apiKey: "AIzaSyD4siULVs184mF6tkcuTRzybRPGxApu5TQ",
-    authDomain: "bainter-xyz.firebaseapp.com",
-    projectId: "bainter-xyz",
-    storageBucket: "bainter-xyz.appspot.com",
-    messagingSenderId: "754582576816",
-    appId: "1:754582576816:web:6c2c2c5c0dd774f8122575",
-    measurementId: "G-03560RG2S2"
-};
-
-let app, auth, db;
-try {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-    enableIndexedDbPersistence(db).catch(err => console.error("Persistence failed", err));
-} catch (error) {
-    console.error("Firebase initialization failed:", error);
-    // If initialization fails, display an error to the user.
-    const loadingEl = document.getElementById('loading');
-    if (loadingEl) {
-        loadingEl.innerText = "Error: Could not connect to the application services. Please try again later.";
-    }
-}
-
 
 // --- GLOBAL VARIABLES ---
 let userId;
@@ -99,12 +72,11 @@ function loadAndDisplayTasks() {
              loadingEl.style.display = 'block';
         } else if (snapshot.empty) {
             loadingEl.innerText = 'No tasks found. Add one to get started!';
-            loadingEl.style.display = 'block'; // Keep it visible
+            loadingEl.style.display = 'block';
         } else {
             loadingEl.style.display = 'none';
         }
         controlsEl.style.display = 'flex';
-
     }, error => {
         console.error("Error with real-time listener:", error);
         loadingEl.innerText = "Error loading tasks.";
