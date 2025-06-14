@@ -3,15 +3,25 @@ import { onAuthStateChanged, signInAnonymously, GoogleAuthProvider, signInWithRe
 import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { db, auth } from './firebase-init.js'; // Import our initialized services
 
+// --- PWA Service Worker Registration ---
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker Registered.', reg))
+            .catch(err => console.error('Service Worker registration failed:', err));
+    });
+}
+
 // --- CONFIGURATION ---
 const ownerId = "PASTE_YOUR_OWNER_USER_ID_HERE"; 
 
-// --- INITIAL DATA & PARSER (FOR FIRST-TIME GOOGLE SIGN-IN) ---
+// --- INITIAL DATA & PARSER ---
 const rawData = `
 standardtaskGet chainsaw running1Trevor1hour
 standardprojectMaddox Honda 50 rebuild engine2Trevor1day
 majortask#figure out suv running boards @4Trevor4hour
-// ... (The rest of your raw data goes here) ...
+standardtaskCreate tv policies at home4Trevor1hour
+// ... (rest of your data)
 miniprojectMaddox Athletic Program Buildout2Trevor 1day$
 `;
 
@@ -35,30 +45,19 @@ function parseInitialData(text) {
             const subCategory = normalizedType.replace(/project|task/, '');
 
             tasks.push({
-                category,
-                subCategory,
-                content: match[1].replace(/^:/, '').trim(),
-                priority: parseInt(match[2], 10),
-                responsible: match[3],
-                duration: parseInt(match[4], 10),
-                durationUnit: match[5].replace(/s$/, '').toLowerCase(),
-                comment: match[6].trim(),
-                completed: false,
-                createdAt: new Date()
+                category, subCategory, content: match[1].replace(/^:/, '').trim(),
+                priority: parseInt(match[2], 10), responsible: match[3],
+                duration: parseInt(match[4], 10), durationUnit: match[5].replace(/s$/, '').toLowerCase(),
+                comment: match[6].trim(), completed: false, createdAt: new Date()
             });
         }
     }
     return tasks;
 }
 
-// --- GLOBAL VARIABLES ---
-let userId;
-let tasksCollectionRef;
-let unsubscribe = () => {};
-let allTasks = [];
-let isGuestMode = false;
 
-// --- UI ELEMENTS ---
+// --- GLOBAL VARIABLES & UI ELEMENTS ---
+let userId, tasksCollectionRef, unsubscribe = () => {}, allTasks = [], isGuestMode = false;
 const authOverlay = document.getElementById('auth-overlay');
 const mainAppContainer = document.getElementById('app');
 const googleSignInBtn = document.getElementById('google-signin-btn');
@@ -85,29 +84,20 @@ const themeToggleBtn = document.getElementById('theme-toggle');
 const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
 const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
 
+
 // --- AUTHENTICATION FLOW ---
 onAuthStateChanged(auth, user => {
+    updateUIAfterAuth(user);
     if (user) {
-        // User is signed in.
         isGuestMode = user.isAnonymous;
         const dataOwnerId = isGuestMode ? ownerId : user.uid;
         userId = dataOwnerId;
         tasksCollectionRef = collection(db, `users/${dataOwnerId}/tasks`);
-        
-        updateUIAfterAuth(user);
         loadAndDisplayTasks();
-    } else {
-        // User is signed out, show the login screen.
-        updateUIAfterAuth(null);
     }
 });
 
-// Handle the redirect result from Google Sign-In
-getRedirectResult(auth)
-  .catch((error) => {
-    console.error("Error getting redirect result", error);
-  });
-
+getRedirectResult(auth).catch(error => console.error("Redirect Result Error:", error));
 
 function updateUIAfterAuth(user) {
     if (user) {
@@ -116,7 +106,7 @@ function updateUIAfterAuth(user) {
         userProfileSection.classList.remove('hidden');
         addTaskBtn.classList.toggle('hidden', isGuestMode);
         
-        if (isGuestMode) {
+        if (user.isAnonymous) {
             userNameEl.textContent = 'Guest (Read-Only)';
             userAvatar.src = 'https://placehold.co/40x40/64748b/ffffff?text=G';
         } else {
@@ -134,71 +124,44 @@ function updateUIAfterAuth(user) {
 
 googleSignInBtn.addEventListener('click', () => {
     const provider = new GoogleAuthProvider();
-    signInWithRedirect(auth, provider); // Use redirect instead of popup
+    signInWithRedirect(auth, provider);
 });
 
-guestSignInBtn.addEventListener('click', () => {
-    signInAnonymously(auth).catch(error => {
-        console.error("Guest sign-in error", error);
-    });
-});
+guestSignInBtn.addEventListener('click', () => signInAnonymously(auth).catch(e => console.error(e)));
 
-signOutBtn.addEventListener('click', () => {
-    signOut(auth).catch(error => {
-        console.error("Sign out error", error);
-    });
-});
+signOutBtn.addEventListener('click', () => signOut(auth).catch(e => console.error(e)));
 
 
-// --- DATA HANDLING & RENDERING ---
+// --- DATA & RENDERING ---
 async function populateInitialData() {
-    if(isGuestMode) return; 
+    if (isGuestMode) return;
     loadingEl.innerText = 'Setting up your personal list...';
     const initialTasks = parseInitialData(rawData);
     if (initialTasks.length > 0) {
         const batch = writeBatch(db);
-        initialTasks.forEach(task => {
-            const newDocRef = doc(tasksCollectionRef);
-            batch.set(newDocRef, task);
-        });
+        initialTasks.forEach(task => batch.set(doc(tasksCollectionRef), task));
         await batch.commit();
     }
 }
 
 async function loadAndDisplayTasks() {
     loadingEl.style.display = 'block';
-    
     const initialSnapshot = await getDocs(tasksCollectionRef);
-    if (initialSnapshot.empty && !isGuestMode) {
-        await populateInitialData();
-    }
-    
-    unsubscribe();
+    if (initialSnapshot.empty && !isGuestMode) await populateInitialData();
     
     unsubscribe = onSnapshot(tasksCollectionRef, snapshot => {
-        allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        allTasks = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
         renderFilteredAndSortedTasks();
-
-        if (snapshot.metadata.hasPendingWrites) {
-             loadingEl.innerText = 'Syncing...';
-             loadingEl.style.display = 'block';
-        } else if (snapshot.empty) {
-            loadingEl.innerText = isGuestMode 
-                ? 'Could not load guest list. Ensure Owner ID is correct.' 
-                : 'No tasks found. Add one to get started!';
-            loadingEl.style.display = 'block';
-        } else {
-            loadingEl.style.display = 'none';
-        }
+        loadingEl.style.display = 'none';
         controlsEl.style.display = 'flex';
-
     }, error => {
-        console.error("Error with real-time listener:", error);
+        console.error("Listener Error:", error);
         loadingEl.innerText = "Error loading tasks.";
     });
 }
 
 function renderFilteredAndSortedTasks() {
+    // ... (rest of the rendering functions remain the same)
     let tasksToRender = [...allTasks];
     const searchTerm = searchInput.value.toLowerCase();
     if (searchTerm) {
@@ -264,7 +227,7 @@ function createTaskCardHTML(task) {
     `;
 }
 
-// --- MODAL HANDLING ---
+// ... (rest of the modal and event listener functions are the same)
 function openModal(task = null) {
     if (isGuestMode) return;
     taskForm.reset();
@@ -328,10 +291,8 @@ taskForm.addEventListener('submit', async (e) => {
 
     try {
         if (id) {
-            const docRef = doc(db, `users/${userId}/tasks`, id);
-            await updateDoc(docRef, taskData);
+            await updateDoc(doc(db, `users/${userId}/tasks`, id), taskData);
         } else {
-            taskData.completed = false;
             taskData.createdAt = new Date();
             await addDoc(tasksCollectionRef, taskData);
         }
@@ -355,30 +316,23 @@ taskForm.addEventListener('submit', async (e) => {
 
 taskListEl.addEventListener('click', async (e) => {
     if (isGuestMode) {
-        // For guests, only allow checking/unchecking the box visually, but don't save it.
         if (e.target.matches('.task-checkbox')) {
-             e.target.checked = !e.target.checked; // Prevent visual change
+             e.target.checked = !e.target.checked;
         }
         return;
     }
-
     const card = e.target.closest('.task-card');
     if (!card) return;
     const id = card.id.replace('task-','');
-    
     if (e.target.matches('.task-checkbox')) {
-        const docRef = doc(db, `users/${userId}/tasks`, id);
-        await updateDoc(docRef, { completed: e.target.checked });
+        await updateDoc(doc(db, `users/${userId}/tasks`, id), { completed: e.target.checked });
     }
-    
     if (e.target.closest('.delete-btn')) {
         e.preventDefault();
         if (window.confirm('Are you sure you want to delete this task?')) {
-            const docRef = doc(db, `users/${userId}/tasks`, id);
-            await deleteDoc(docRef);
+            await deleteDoc(doc(db, `users/${userId}/tasks`, id));
         }
     }
-
     if (e.target.closest('.edit-btn')) {
         e.preventDefault();
         const taskToEdit = allTasks.find(t => t.id === id);
@@ -386,7 +340,6 @@ taskListEl.addEventListener('click', async (e) => {
     }
 });
 
-// --- THEME TOGGLE ---
 function applyTheme(theme) {
     if (theme === 'dark') {
         document.documentElement.classList.add('dark');
@@ -404,7 +357,6 @@ themeToggleBtn.addEventListener('click', () => {
     applyTheme(newTheme);
 });
 
-// --- INITIALIZATION ---
 function initializeApp() {
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;

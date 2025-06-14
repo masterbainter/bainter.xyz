@@ -1,8 +1,10 @@
-const CACHE_NAME = 'checklist-pwa-v4'; // A new version name to force an update
+// A new version name to force an update and clear old caches.
+const CACHE_NAME = 'checklist-pwa-v5'; 
 const urlsToCache = [
   './', 
   './index.html',
-  './app.js?v=3', // Match the cache-busting version from index.html
+  './app.js?v=7', // The version must match the one in index.html
+  './firebase-init.js',
   'https://cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
@@ -10,32 +12,32 @@ const urlsToCache = [
 
 // Install event - cache the app shell
 self.addEventListener('install', event => {
-  console.log('Service Worker: Installing...');
+  console.log('Service Worker: Installing new version...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Service Worker: Caching app shell');
+        console.log('Service Worker: Caching new app shell');
         return cache.addAll(urlsToCache);
       })
-      .then(() => self.skipWaiting()) // Force the new service worker to become active
+      .then(() => self.skipWaiting()) // Force the new service worker to become active immediately
   );
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up ALL old caches
 self.addEventListener('activate', event => {
-  console.log('Service Worker: Activating...');
+  console.log('Service Worker: Activating new version...');
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
           if (cacheWhitelist.indexOf(cacheName) === -1) {
-            console.log('Service Worker: Deleting old cache', cacheName);
+            console.log('Service Worker: Deleting old cache ->', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => self.clients.claim()) // Take control of all open clients
+    }).then(() => self.clients.claim()) // Take control of all open pages
   );
 });
 
@@ -43,7 +45,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
     const requestUrl = new URL(event.request.url);
 
-    // Ignore requests to Firebase
+    // If the request is for Firebase, ignore it and let it go to the network.
     if (requestUrl.hostname.includes('firebase') || requestUrl.hostname.includes('googleapis')) {
         return;
     }
@@ -51,11 +53,11 @@ self.addEventListener('fetch', event => {
     event.respondWith(
         caches.match(event.request)
         .then(response => {
-            // Cache hit - return response
+            // If the request is in the cache, return it.
             if (response) {
-            return response;
+              return response;
             }
-            // Not in cache - fetch from network
+            // Otherwise, fetch it from the network.
             return fetch(event.request);
         })
     );
