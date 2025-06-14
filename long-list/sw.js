@@ -1,4 +1,4 @@
-const CACHE_NAME = 'checklist-pwa-v3'; // Changed cache name to force update
+const CACHE_NAME = 'checklist-pwa-v2'; // Changed cache name to force update
 const urlsToCache = [
   './', // Use relative paths for GitHub Pages
   './index.html',
