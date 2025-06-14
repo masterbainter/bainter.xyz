@@ -1,10 +1,10 @@
-// Import only the necessary functions from Firebase and our init file
+// Firebase Imports
 import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { db, auth } from './firebase-init.js'; // Import our initialized services
 
 // --- PWA Service Worker Registration ---
-// Temporarily disabled. We will re-enable this after the app loads correctly.
+// Temporarily disabled. We will re-enable this after the app is fully working.
 // if ('serviceWorker' in navigator) {
 //     window.addEventListener('load', () => {
 //         navigator.serviceWorker.register('./sw.js')
@@ -12,6 +12,111 @@ import { db, auth } from './firebase-init.js'; // Import our initialized service
 //             .catch(err => console.error('Service Worker registration failed:', err));
 //     });
 // }
+
+// --- INITIAL DATA & PARSER (FOR FIRST-TIME SETUP) ---
+const rawData = `
+standardtaskGet chainsaw running1Trevor1hour
+standardprojectMaddox Honda 50 rebuild engine2Trevor1day
+majortask#figure out suv running boards @4Trevor4hour
+standardtaskCreate tv policies at home4Trevor1hour
+standardtaskSwitch out battery connector new suv2Trevor1hour
+majortaskDrain liquid from dirt bikes3Trevor6hour
+standardtaskFixup and/or Move old washer out of Freezer room4Trevor1hour
+miniprojectSkirt the house2Trevor6hour
+standardprojectGarage Door Opener Fix Electricity (rain/wet issue)2Trevor8hour
+miniprojectBuild Bike Holder System in Garage/Quonset (4 bikes desire, 6 if possible)4Trevor6hour
+majortaskFishing gear: organize and clean4Trevor4hour
+standardtaskSakurs motorcycle: oil change4Trevor2hour
+standardtaskMaddox motorcycle: oil change4Trevor2hour
+majortaskTry to Repair 18V dewalt batteries4Trevor3hour
+miniprojectLiving to Porch Window Decide what to do4Trevor45minutestandardtaskFigure out home firewall issue4Trevor1hour
+miniprojectTry to adjust seal or fix it on quonet big doors4Trevor8hour
+standardtaskResearch/buy vapor barrier for attic insulation4Trevor1hour
+miniprojectRoll out insulation in attic and above kitchen2Trevor6hour
+standardtaskGet Bolt Title to Barry1Trevor1hour
+majorprojectBuild a Sauna Project4Trevor4day
+miniprojectFigure out if Bird Plucker Motor will work.1Trevor6hour
+majortaskType up training program for Sakura and Maddox2Trevor3hour
+minitaskPut old batteries in bolt1Trevor15minute
+standardtaskFind/Repair leak in living room window1Trevor3hour
+miniprojectFigure out Gutters1Trevor1day
+majorprojectSell YZ1253Trevor4day
+majortaskFix Gray Impala Power Steering Pump2Trevor4hour
+standardprojectReplace Bedroom Window3Trevor2day
+majorprojectDining room Hutch remodel (to wall where wood stove can be)4Trevor15day
+majorprojectBasement Poles (get metals ones to raise the floor a bit in spots)2Trevor2day
+StandardprojectRoof (Shingles have blown up again…)1Trevor3day
+stanadrdtaskShelf in basement (more storage / canning)4Trevor1hour
+miniprojectGo through basement Storage3Trevor5hour
+standardtaskGet Trevor Clothes out of Laundry Room3Trevor1hour
+miniprojectSet up DNS server virtualized so we can use that locally3Trevor4hour
+standardtaskFigure out Sakura's flip laptop (the screen flips over and works4Trevor1hour
+standardtaskHave chatGPT help me with my LinkedIn profile2Trevor2hour
+miniprojectFigure out a Central repository for all the phone pictures and backups2Trevor6hour
+majortaskBuild a process for creating characters so Iyoko can do it2Trevor3hour
+miniprojectGray as SUV starting issue electrical3Trevor6hour
+miniprojectResearch/Setup something like quote IQ for mowing.day4Trevor3hour
+majortaskFlow Chart mowing.day setups so far3Trevor3hour
+standardtaskDefine Funnels for mowing.day past/future4Trevor2hour
+standardtaskAOW Exhibition during duals idea1Trevor2hour
+MajortaskDishWasher not Draining Troubleshooting1Trevor4hour
+MajortaskFinish acquiring electrical fencing strand4Trevor3hour
+standardtaskMake kettlebell holder4Trevor2hour
+miniprojectFix Up Boat (make water ready) 3Trevor1day
+standardprojectTrailer build 3Trevor2day
+MajortaskFix Potholes in Driveway2Trevor4hour
+StandardtaskFix Kitchen Door Bottom Hing (holes worn out)2Trevor 2hour
+MajortaskFix Red Truck Hitch4Trevor 6hour
+MajorProjectBuildout IT Work Scheduling app4Trevor 4dayUsing what I learned from mowing.day about bonnecting bookings app with web app. Possibly a way to align schedule with traveling for either wrestling or whatever and pick up IT Jobs that I can solve in 1-4 hours work for extra money
+majortaskReview/update Tasking/Project workflow2Trevor 6hour
+majorprojectBuild a butcher room in quonset4Trevor 6day$$$$$
+majortaskRed Truck: Fix Brakes (inspect and fix)4Trevor 1day$$
+majortaskBuild out kids productivity game (school/Todo/chores/etc.)2Trevor 6hour$
+standardprojectFix SUV Sunroof 4Trevor 2day$$
+majortaskSet up DNS redudnancy at home4Trevor 4hour
+majortaskShower plumbing (sometimes bad smells) troubleshootin / fix3Trevor 6hour$$$
+miniprojectSakura Education 5th grade plan buildout2Trevor 1day$
+miniprojectMaddox Education 4th grade plan buildout2Trevor 1day$
+miniprojectSakura Athletic Program Buildout2Trevor 1day$
+miniprojectMaddox Athletic Program Buildout2Trevor 1day$
+`;
+
+function parseInitialData(text) {
+    const tasks = [];
+    const typeKeywords = ['standardtask', 'standardproject', 'majortask', 'majorproject', 'miniproject', 'minitask', 'stanadrdtask', 'Standardproject', 'Majortask', 'MajorProject'];
+    const splitRegex = new RegExp(`(${typeKeywords.join('|')})`, 'gi');
+    const correctedText = text.replace(splitRegex, '\n$1').trim();
+    const lines = correctedText.split('\n').filter(line => line.trim() !== '');
+
+    for (const line of lines) {
+        const foundType = typeKeywords.find(t => line.toLowerCase().startsWith(t.toLowerCase()));
+        if (!foundType) continue;
+
+        const restOfLine = line.substring(foundType.length);
+        const match = restOfLine.match(/(.+?)(\d)\s*(Trevor)\s*(\d+)\s*([a-zA-Z]+)(.*)/);
+        
+        if (match) {
+            const normalizedType = foundType.toLowerCase().replace('stanadrdtask', 'standardtask');
+            const category = normalizedType.includes('project') ? 'project' : 'task';
+            const subCategory = normalizedType.replace(/project|task/, '');
+
+            tasks.push({
+                category,
+                subCategory,
+                content: match[1].replace(/^:/, '').trim(),
+                priority: parseInt(match[2], 10),
+                responsible: match[3],
+                duration: parseInt(match[4], 10),
+                durationUnit: match[5].replace(/s$/, '').toLowerCase(),
+                comment: match[6].trim(),
+                completed: false,
+                createdAt: new Date()
+            });
+        }
+    }
+    return tasks;
+}
+
 
 // --- GLOBAL VARIABLES ---
 let userId;
@@ -59,9 +164,32 @@ async function initializeAuth() {
 }
 
 // --- DATA HANDLING & RENDERING ---
-function loadAndDisplayTasks() {
+async function populateInitialData() {
+    console.log('Populating database with initial data...');
+    loadingEl.innerText = 'Setting up your list for the first time...';
+    const initialTasks = parseInitialData(rawData);
+    if (initialTasks.length > 0) {
+        const batch = writeBatch(db);
+        initialTasks.forEach(task => {
+            const newDocRef = doc(tasksCollectionRef);
+            batch.set(newDocRef, task);
+        });
+        await batch.commit();
+        console.log('Initial data populated successfully.');
+    }
+}
+
+
+async function loadAndDisplayTasks() {
     loadingEl.style.display = 'block';
-    unsubscribe();
+    
+    // Check if the database is empty for this user before setting up the listener
+    const initialSnapshot = await getDocs(tasksCollectionRef);
+    if (initialSnapshot.empty) {
+        await populateInitialData();
+    }
+    
+    unsubscribe(); // Detach any old listener
     
     unsubscribe = onSnapshot(tasksCollectionRef, snapshot => {
         allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -77,6 +205,7 @@ function loadAndDisplayTasks() {
             loadingEl.style.display = 'none';
         }
         controlsEl.style.display = 'flex';
+
     }, error => {
         console.error("Error with real-time listener:", error);
         loadingEl.innerText = "Error loading tasks.";
