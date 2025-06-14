@@ -37,21 +37,32 @@
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
 
+    <!-- Authentication Overlay -->
     <div id="auth-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div class="w-full max-w-sm p-8 text-center bg-white dark:bg-gray-800 rounded-2xl shadow-xl">
-            <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-                <i class="fas fa-check-double text-blue-500"></i> Trevor's Checklist
-            </h1>
-            <p class="text-gray-500 dark:text-gray-400 mb-8">Sign in to sync your tasks.</p>
-            <button id="google-signin-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg shadow-md mb-4 flex items-center justify-center">
-                <i class="fab fa-google mr-2"></i> Sign in with Google
-            </button>
-            <button id="guest-signin-btn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg shadow-md">
-                Continue as Guest
-            </button>
+        <div class="w-full max-w-sm p-8 text-center">
+            <!-- Loading State -->
+            <div id="auth-loading">
+                <p class="text-lg text-gray-600 dark:text-gray-300">Authenticating...</p>
+                <!-- You could add a spinner SVG here for better UX -->
+            </div>
+            <!-- Sign-in Buttons (initially hidden) -->
+            <div id="auth-buttons" class="hidden">
+                <h1 class="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-2">
+                    <i class="fas fa-check-double text-blue-500"></i> Trevor's Checklist
+                </h1>
+                <p class="text-gray-500 dark:text-gray-400 mb-8">Sign in to sync your tasks.</p>
+                <button id="google-signin-btn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg shadow-md mb-4 flex items-center justify-center">
+                    <i class="fab fa-google mr-2"></i> Sign in with Google
+                </button>
+                <button id="guest-signin-btn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-lg shadow-md">
+                    Continue as Guest
+                </button>
+            </div>
         </div>
     </div>
 
+
+    <!-- Main App Container (Initially Hidden) -->
     <div id="app" class="hidden container mx-auto p-4 md:p-8 max-w-7xl">
         <header class="flex flex-col md:flex-row justify-between items-center mb-6">
             <h1 class="text-3xl md:text-4xl font-bold text-gray-800 dark:text-gray-100 mb-4 md:mb-0">
@@ -151,7 +162,7 @@
     </div>
     
     <!-- SCRIPT LOADING WITH CACHE BUSTING -->
-    <script type="module" src="./app.js?v=7"></script>
+    <script type="module" src="./app.js?v=8"></script>
 
 </body>
 </html>
