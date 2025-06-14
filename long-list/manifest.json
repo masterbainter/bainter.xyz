@@ -8,14 +8,14 @@
   "description": "A checklist application for Trevor's tasks and projects.",
   "icons": [
     {
-      "src": "icon.jpeg",
+      "src": "icon.png",
       "sizes": "192x192",
-      "type": "image/jpeg"
+      "type": "image/png"
     },
     {
-      "src": "icon.jpeg",
+      "src": "icon.png",
       "sizes": "512x512",
-      "type": "image/jpeg"
+      "type": "image/png"
     }
   ]
 }
