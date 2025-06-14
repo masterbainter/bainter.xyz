@@ -64,31 +64,31 @@ const themeToggleBtn = document.getElementById('theme-toggle'), themeToggleDarkI
 
 
 // --- AUTHENTICATION LOGIC ---
-onAuthStateChanged(auth, user => {
+function handleUser(user) {
     if (user) {
+        // User is signed in.
         isGuestMode = user.isAnonymous;
         const dataOwnerId = isGuestMode ? ownerId : user.uid;
         userId = dataOwnerId;
-        if (!userId || (isGuestMode && userId === "PASTE_YOUR_OWNER_USER_ID_HERE")) {
+
+        if (isGuestMode && (!userId || userId === "PASTE_YOUR_OWNER_USER_ID_HERE")) {
             showAuthError("Configuration Error: Owner ID for guest mode is not set.");
             return;
         }
+
         tasksCollectionRef = collection(db, `users/${userId}/tasks`);
         updateUIAfterAuth(user);
         loadAndDisplayTasks();
     } else {
+        // User is signed out.
         updateUIAfterAuth(null);
     }
-});
-
-// Immediately check for a redirect result when the app loads
-getRedirectResult(auth).catch(error => {
-    console.error("Error processing redirect result", error);
-});
-
+}
 
 function updateUIAfterAuth(user) {
     if (user) {
+        authLoading.classList.add('hidden');
+        authButtons.classList.add('hidden');
         authOverlay.classList.add('hidden');
         mainAppContainer.classList.remove('hidden');
         userProfileSection.classList.remove('hidden');
@@ -113,7 +113,9 @@ function updateUIAfterAuth(user) {
 }
 
 function showAuthError(message) {
-    authLoading.innerHTML = `<p class="text-lg text-red-500">${message}</p>`;
+    const authContent = authOverlay.querySelector('div');
+    authContent.innerHTML = `<p class="text-lg text-red-500">${message}</p>`;
+    authOverlay.classList.remove('hidden');
 }
 
 googleSignInBtn.addEventListener('click', () => {
@@ -174,6 +176,7 @@ async function loadAndDisplayTasks() {
             loadingEl.style.display = 'none';
         }
         controlsEl.style.display = 'flex';
+
     }, error => {
         console.error("Error with real-time listener:", error);
         loadingEl.innerText = "Error loading tasks.";
@@ -230,7 +233,6 @@ function createTaskCardHTML(task) {
 }
 
 // --- MODAL & EVENT LISTENER LOGIC ---
-// ... (The rest of the event listeners and modal functions remain the same) ...
 function openModal(task = null) {
     if (isGuestMode) return;
     taskForm.reset();
@@ -327,13 +329,17 @@ function applyTheme(theme) {
 themeToggleBtn.addEventListener('click', () => {
     const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
     localStorage.setItem('theme', newTheme);
-applyTheme(newTheme);
+    applyTheme(newTheme);
 });
 
 // --- INITIALIZATION ---
 function initializeApp() {
     const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
     applyTheme(savedTheme);
+    
+    // The onAuthStateChanged listener will handle the initial auth state.
+    // We don't need to call a separate init function for auth anymore.
 }
 
 initializeApp();
+
