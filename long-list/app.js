@@ -1,5 +1,33 @@
-// NOTE: Firebase is now initialized in index.html. 
-// This file assumes `app`, `auth`, and `db` are available globally.
+// Firebase Imports
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, collection, deleteDoc, updateDoc, onSnapshot, getDocs, enableIndexedDbPersistence, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+// --- PWA Service Worker Registration ---
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service worker registered', reg))
+            .catch(err => console.error('Service worker registration failed', err));
+    });
+}
+
+// --- FIREBASE SETUP ---
+const firebaseConfig = {
+    apiKey: "AIzaSyD4siULVs184mF6tkcuTRzybRPGxApu5TQ",
+    authDomain: "bainter-xyz.firebaseapp.com",
+    projectId: "bainter-xyz",
+    storageBucket: "bainter-xyz.appspot.com",
+    messagingSenderId: "754582576816",
+    appId: "1:754582576816:web:6c2c2c5c0dd774f8122575",
+    measurementId: "G-03560RG2S2"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+enableIndexedDbPersistence(db).catch(err => console.error("Persistence failed", err));
 
 // --- GLOBAL VARIABLES ---
 let userId;
@@ -25,7 +53,6 @@ const cancelBtn = document.getElementById('cancelBtn');
 const themeToggleBtn = document.getElementById('theme-toggle');
 const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
 const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
-
 
 // --- AUTHENTICATION ---
 onAuthStateChanged(auth, user => {
@@ -56,7 +83,7 @@ function loadAndDisplayTasks() {
         allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderFilteredAndSortedTasks();
 
-        if(snapshot.empty) {
+        if (snapshot.empty) {
             loadingEl.innerText = 'No tasks found. Add one to get started!';
         } else {
             loadingEl.style.display = 'none';

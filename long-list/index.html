@@ -26,63 +26,18 @@
     <link rel="icon" type="image/png" sizes="512x512" href="icon.png">
 
     <style>
-        html {
-            /* Smooth transition for theme changes */
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .task-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-        }
-        .task-card.completed {
-            background-color: #f3f4f6; /* gray-100 */
-            opacity: 0.7;
-        }
-        .dark .task-card.completed {
-             background-color: #374151; /* gray-700 */
-             opacity: 0.5;
-        }
-        .task-card.completed .task-content {
-            text-decoration: line-through;
-            color: #6b7280; /* gray-500 */
-        }
-        .dark .task-card.completed .task-content {
-            color: #9ca3af; /* gray-400 */
-        }
-        .priority-1 { border-left-color: #ef4444; } /* red-500 */
-        .priority-2 { border-left-color: #f97316; } /* orange-500 */
-        .priority-3 { border-left-color: #3b82f6; } /* blue-500 */
-        .priority-4 { border-left-color: #84cc16; } /* lime-500 */
-
-        /* Custom scrollbar for better aesthetics */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        .dark ::-webkit-scrollbar-track {
-            background: #2d3748; /* gray-800 */
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
-        
-        /* Modal styles */
-        .modal-backdrop {
-            background-color: rgba(0,0,0,0.5);
-            transition: opacity 0.3s ease;
-        }
-        .modal-content {
-            transition: transform 0.3s ease;
-        }
+        html { transition: background-color 0.3s ease, color 0.3s ease; }
+        body { font-family: 'Inter', sans-serif; }
+        .task-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+        .task-card.completed { background-color: #f3f4f6; opacity: 0.7; }
+        .dark .task-card.completed { background-color: #374151; opacity: 0.5; }
+        .task-card.completed .task-content { text-decoration: line-through; color: #6b7280; }
+        .dark .task-card.completed .task-content { color: #9ca3af; }
+        .priority-1 { border-left-color: #ef4444; } .priority-2 { border-left-color: #f97316; } .priority-3 { border-left-color: #3b82f6; } .priority-4 { border-left-color: #84cc16; }
+        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: #f1f1f1; } .dark ::-webkit-scrollbar-track { background: #2d3748; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; } ::-webkit-scrollbar-thumb:hover { background: #555; }
+        .modal-backdrop { background-color: rgba(0,0,0,0.5); transition: opacity 0.3s ease; }
+        .modal-content { transition: transform 0.3s ease; }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300">
@@ -105,18 +60,12 @@
                 </button>
             </div>
         </header>
-
-        <!-- Loading / Initial State -->
         <div id="loading" class="text-center py-10">
             <p class="text-gray-500 dark:text-gray-400">Loading tasks...</p>
         </div>
-        
-        <!-- Controls -->
         <div id="controls" class="hidden mb-6 flex flex-col md:flex-row gap-4 items-center">
             <div class="relative flex-grow w-full">
-                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <i class="fas fa-search"></i>
-                </span>
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><i class="fas fa-search"></i></span>
                 <input type="text" id="searchInput" placeholder="Search tasks..." class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div class="flex gap-4 w-full md:w-auto">
@@ -126,65 +75,44 @@
                     <option value="content-desc">Sort by Name (Z-A)</option>
                 </select>
                 <select id="filterSelect" class="w-full md:w-auto bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="all">All Categories</option>
-                    <option value="task">Tasks</option>
-                    <option value="project">Projects</option>
+                    <option value="all">All Categories</option><option value="task">Tasks</option><option value="project">Projects</option>
                 </select>
                  <select id="subCategoryFilter" class="w-full md:w-auto bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="all">All Levels</option>
-                    <option value="mini">Mini</option>
-                    <option value="standard">Standard</option>
-                    <option value="major">Major</option>
+                    <option value="all">All Levels</option><option value="mini">Mini</option><option value="standard">Standard</option><option value="major">Major</option>
                 </select>
             </div>
         </div>
-
-        <!-- Task List -->
-        <main id="taskList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Task cards will be injected here -->
-        </main>
-
+        <main id="taskList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></main>
     </div>
-
-    <!-- Add/Edit Task Modal -->
     <div id="taskModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 hidden">
         <div class="modal-backdrop fixed inset-0"></div>
         <div class="modal-content bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-w-md mx-auto z-10 transform scale-95">
             <form id="taskForm" class="p-6">
                 <h2 id="modalTitle" class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Add New Task</h2>
                 <input type="hidden" id="taskId">
-                
                 <div class="mb-4">
                     <label for="content" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Task Description</label>
                     <input type="text" id="content" class="w-full p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                 </div>
-
                 <div class="grid grid-cols-2 gap-4 mb-4">
                      <div>
                         <label for="category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
                         <select id="category" class="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                            <option value="task">Task</option>
-                            <option value="project">Project</option>
+                            <option value="task">Task</option><option value="project">Project</option>
                         </select>
                     </div>
                     <div>
                         <label for="subCategory" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Level</label>
                         <select id="subCategory" class="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                            <option value="mini">Mini</option>
-                            <option value="standard">Standard</option>
-                            <option value="major">Major</option>
+                            <option value="mini">Mini</option><option value="standard">Standard</option><option value="major">Major</option>
                         </select>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div>
                         <label for="priority" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Priority</label>
                         <select id="priority" class="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                            <option value="1">1 (Highest)</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4 (Lowest)</option>
+                            <option value="1">1 (Highest)</option><option value="2">2</option><option value="3">3</option><option value="4">4 (Lowest)</option>
                         </select>
                     </div>
                      <div>
@@ -195,17 +123,13 @@
                  <div class="mb-4">
                     <label for="durationUnit" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duration Unit</label>
                     <select id="durationUnit" class="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-                        <option value="minute">Minute(s)</option>
-                        <option value="hour">Hour(s)</option>
-                        <option value="day">Day(s)</option>
+                        <option value="minute">Minute(s)</option><option value="hour">Hour(s)</option><option value="day">Day(s)</option>
                     </select>
                 </div>
-
                 <div class="mb-6">
                     <label for="comment" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Comment / Cost</label>
                     <input type="text" id="comment" class="w-full p-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
-
                 <div class="flex justify-end gap-4">
                     <button type="button" id="cancelBtn" class="bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-lg transition-colors">Cancel</button>
                     <button type="submit" id="saveBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Save Task</button>
@@ -214,8 +138,8 @@
         </div>
     </div>
     
-    <!-- The entire application logic is now in an external file -->
-    <script type="module" src="app.js"></script>
+    <!-- SCRIPT LOADING WITH CACHE BUSTING -->
+    <script type="module" src="app.js?v=3"></script>
 
 </body>
 </html>
