@@ -1,7 +1,5 @@
-// This file's sole purpose is to initialize Firebase and export the services.
-// It acts as a singleton, ensuring this code runs only once.
+// This file's sole purpose is to initialize Firebase and export the db service.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -16,7 +14,6 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const db = getFirestore(app);
 
 // Enable offline data persistence
@@ -24,5 +21,5 @@ enableIndexedDbPersistence(db).catch(err => {
     console.error("Firebase persistence error", err.code, err.message);
 });
 
-// Export the initialized services for other modules to use
-export { db, auth };
+// Export the initialized db service for other modules to use
+export { db };
