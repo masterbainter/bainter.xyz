@@ -15,13 +15,71 @@ if ('serviceWorker' in navigator) {
 // --- CONFIGURATION ---
 const ownerId = "PASTE_YOUR_OWNER_USER_ID_HERE"; 
 
-// --- INITIAL DATA & PARSER ---
+// --- INITIAL DATA & PARSER (FOR FIRST-TIME GOOGLE SIGN-IN) ---
 const rawData = `
 standardtaskGet chainsaw running1Trevor1hour
 standardprojectMaddox Honda 50 rebuild engine2Trevor1day
 majortask#figure out suv running boards @4Trevor4hour
 standardtaskCreate tv policies at home4Trevor1hour
-// ... (rest of your data)
+standardtaskSwitch out battery connector new suv2Trevor1hour
+majortaskDrain liquid from dirt bikes3Trevor6hour
+standardtaskFixup and/or Move old washer out of Freezer room4Trevor1hour
+miniprojectSkirt the house2Trevor6hour
+standardprojectGarage Door Opener Fix Electricity (rain/wet issue)2Trevor8hour
+miniprojectBuild Bike Holder System in Garage/Quonset (4 bikes desire, 6 if possible)4Trevor6hour
+majortaskFishing gear: organize and clean4Trevor4hour
+standardtaskSakurs motorcycle: oil change4Trevor2hour
+standardtaskMaddox motorcycle: oil change4Trevor2hour
+majortaskTry to Repair 18V dewalt batteries4Trevor3hour
+miniprojectLiving to Porch Window Decide what to do4Trevor45minutestandardtaskFigure out home firewall issue4Trevor1hour
+miniprojectTry to adjust seal or fix it on quonet big doors4Trevor8hour
+standardtaskResearch/buy vapor barrier for attic insulation4Trevor1hour
+miniprojectRoll out insulation in attic and above kitchen2Trevor6hour
+standardtaskGet Bolt Title to Barry1Trevor1hour
+majorprojectBuild a Sauna Project4Trevor4day
+miniprojectFigure out if Bird Plucker Motor will work.1Trevor6hour
+majortaskType up training program for Sakura and Maddox2Trevor3hour
+minitaskPut old batteries in bolt1Trevor15minute
+standardtaskFind/Repair leak in living room window1Trevor3hour
+miniprojectFigure out Gutters1Trevor1day
+majorprojectSell YZ1253Trevor4day
+majortaskFix Gray Impala Power Steering Pump2Trevor4hour
+standardprojectReplace Bedroom Window3Trevor2day
+majorprojectDining room Hutch remodel (to wall where wood stove can be)4Trevor15day
+majorprojectBasement Poles (get metals ones to raise the floor a bit in spots)2Trevor2day
+StandardprojectRoof (Shingles have blown up again…)1Trevor3day
+stanadrdtaskShelf in basement (more storage / canning)4Trevor1hour
+miniprojectGo through basement Storage3Trevor5hour
+standardtaskGet Trevor Clothes out of Laundry Room3Trevor1hour
+miniprojectSet up DNS server virtualized so we can use that locally3Trevor4hour
+standardtaskFigure out Sakura's flip laptop (the screen flips over and works4Trevor1hour
+standardtaskHave chatGPT help me with my LinkedIn profile2Trevor2hour
+miniprojectFigure out a Central repository for all the phone pictures and backups2Trevor6hour
+majortaskBuild a process for creating characters so Iyoko can do it2Trevor3hour
+miniprojectGray as SUV starting issue electrical3Trevor6hour
+miniprojectResearch/Setup something like quote IQ for mowing.day4Trevor3hour
+majortaskFlow Chart mowing.day setups so far3Trevor3hour
+standardtaskDefine Funnels for mowing.day past/future4Trevor2hour
+standardtaskAOW Exhibition during duals idea1Trevor2hour
+MajortaskDishWasher not Draining Troubleshooting1Trevor4hour
+MajortaskFinish acquiring electrical fencing strand4Trevor3hour
+standardtaskMake kettlebell holder4Trevor2hour
+miniprojectFix Up Boat (make water ready) 3Trevor1day
+standardprojectTrailer build 3Trevor2day
+MajortaskFix Potholes in Driveway2Trevor4hour
+StandardtaskFix Kitchen Door Bottom Hing (holes worn out)2Trevor 2hour
+MajortaskFix Red Truck Hitch4Trevor 6hour
+MajorProjectBuildout IT Work Scheduling app4Trevor 4dayUsing what I learned from mowing.day about bonnecting bookings app with web app. Possibly a way to align schedule with traveling for either wrestling or whatever and pick up IT Jobs that I can solve in 1-4 hours work for extra money
+majortaskReview/update Tasking/Project workflow2Trevor 6hour
+majorprojectBuild a butcher room in quonset4Trevor 6day$$$$$
+majortaskRed Truck: Fix Brakes (inspect and fix)4Trevor 1day$$
+majortaskBuild out kids productivity game (school/Todo/chores/etc.)2Trevor 6hour$
+standardprojectFix SUV Sunroof 4Trevor 2day$$
+majortaskSet up DNS redudnancy at home4Trevor 4hour
+majortaskShower plumbing (sometimes bad smells) troubleshootin / fix3Trevor 6hour$$$
+miniprojectSakura Education 5th grade plan buildout2Trevor 1day$
+miniprojectMaddox Education 4th grade plan buildout2Trevor 1day$
+miniprojectSakura Athletic Program Buildout2Trevor 1day$
 miniprojectMaddox Athletic Program Buildout2Trevor 1day$
 `;
 
@@ -45,19 +103,30 @@ function parseInitialData(text) {
             const subCategory = normalizedType.replace(/project|task/, '');
 
             tasks.push({
-                category, subCategory, content: match[1].replace(/^:/, '').trim(),
-                priority: parseInt(match[2], 10), responsible: match[3],
-                duration: parseInt(match[4], 10), durationUnit: match[5].replace(/s$/, '').toLowerCase(),
-                comment: match[6].trim(), completed: false, createdAt: new Date()
+                category,
+                subCategory,
+                content: match[1].replace(/^:/, '').trim(),
+                priority: parseInt(match[2], 10),
+                responsible: match[3],
+                duration: parseInt(match[4], 10),
+                durationUnit: match[5].replace(/s$/, '').toLowerCase(),
+                comment: match[6].trim(),
+                completed: false,
+                createdAt: new Date()
             });
         }
     }
     return tasks;
 }
 
+// --- GLOBAL VARIABLES ---
+let userId;
+let tasksCollectionRef;
+let unsubscribe = () => {};
+let allTasks = [];
+let isGuestMode = false;
 
-// --- GLOBAL VARIABLES & UI ELEMENTS ---
-let userId, tasksCollectionRef, unsubscribe = () => {}, allTasks = [], isGuestMode = false;
+// --- UI ELEMENTS ---
 const authOverlay = document.getElementById('auth-overlay');
 const mainAppContainer = document.getElementById('app');
 const googleSignInBtn = document.getElementById('google-signin-btn');
@@ -84,20 +153,51 @@ const themeToggleBtn = document.getElementById('theme-toggle');
 const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
 const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
 
-
 // --- AUTHENTICATION FLOW ---
+function showAuthLoading(isAuthenticating) {
+    const authContent = authOverlay.querySelector('div');
+    if (isAuthenticating) {
+        authContent.innerHTML = `<p class="text-lg text-gray-600 dark:text-gray-300">Signing in...</p>`;
+    } else {
+        // Restore original content if needed (not strictly necessary with this flow)
+    }
+}
+
 onAuthStateChanged(auth, user => {
-    updateUIAfterAuth(user);
     if (user) {
+        // User is signed in.
         isGuestMode = user.isAnonymous;
         const dataOwnerId = isGuestMode ? ownerId : user.uid;
         userId = dataOwnerId;
-        tasksCollectionRef = collection(db, `users/${dataOwnerId}/tasks`);
+        
+        if (!userId || userId === "PASTE_YOUR_OWNER_USER_ID_HERE" && isGuestMode) {
+            loadingEl.innerText = "Configuration Error: Owner ID is not set for guest mode.";
+            loadingEl.style.display = 'block';
+            return;
+        }
+
+        tasksCollectionRef = collection(db, `users/${userId}/tasks`);
+        updateUIAfterAuth(user);
         loadAndDisplayTasks();
+
+    } else {
+        // User is signed out, show the login screen.
+        updateUIAfterAuth(null);
     }
 });
 
-getRedirectResult(auth).catch(error => console.error("Redirect Result Error:", error));
+// Handle the redirect result from Google Sign-In
+getRedirectResult(auth)
+  .then((result) => {
+    // This will trigger onAuthStateChanged, which handles the rest.
+    if (result) {
+        console.log("Redirect sign-in successful.");
+    }
+  })
+  .catch((error) => {
+    console.error("Error processing redirect result", error);
+  });
+
 
 function updateUIAfterAuth(user) {
     if (user) {
@@ -106,7 +206,7 @@ function updateUIAfterAuth(user) {
         userProfileSection.classList.remove('hidden');
         addTaskBtn.classList.toggle('hidden', isGuestMode);
         
-        if (user.isAnonymous) {
+        if (isGuestMode) {
             userNameEl.textContent = 'Guest (Read-Only)';
             userAvatar.src = 'https://placehold.co/40x40/64748b/ffffff?text=G';
         } else {
@@ -123,45 +223,74 @@ function updateUIAfterAuth(user) {
 }
 
 googleSignInBtn.addEventListener('click', () => {
+    showAuthLoading(true);
     const provider = new GoogleAuthProvider();
-    signInWithRedirect(auth, provider);
+    signInWithRedirect(auth, provider); 
 });
 
-guestSignInBtn.addEventListener('click', () => signInAnonymously(auth).catch(e => console.error(e)));
+guestSignInBtn.addEventListener('click', () => {
+    showAuthLoading(true);
+    signInAnonymously(auth).catch(error => {
+        console.error("Guest sign-in error", error);
+    });
+});
 
-signOutBtn.addEventListener('click', () => signOut(auth).catch(e => console.error(e)));
+signOutBtn.addEventListener('click', () => {
+    signOut(auth).catch(error => {
+        console.error("Sign out error", error);
+    });
+});
 
 
-// --- DATA & RENDERING ---
+// --- DATA HANDLING & RENDERING ---
 async function populateInitialData() {
-    if (isGuestMode) return;
+    if(isGuestMode) return; 
     loadingEl.innerText = 'Setting up your personal list...';
     const initialTasks = parseInitialData(rawData);
     if (initialTasks.length > 0) {
         const batch = writeBatch(db);
-        initialTasks.forEach(task => batch.set(doc(tasksCollectionRef), task));
+        initialTasks.forEach(task => {
+            const newDocRef = doc(tasksCollectionRef);
+            batch.set(newDocRef, task);
+        });
         await batch.commit();
     }
 }
 
 async function loadAndDisplayTasks() {
     loadingEl.style.display = 'block';
+    
     const initialSnapshot = await getDocs(tasksCollectionRef);
-    if (initialSnapshot.empty && !isGuestMode) await populateInitialData();
+    if (initialSnapshot.empty && !isGuestMode) {
+        await populateInitialData();
+    }
+    
+    unsubscribe();
     
     unsubscribe = onSnapshot(tasksCollectionRef, snapshot => {
-        allTasks = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderFilteredAndSortedTasks();
-        loadingEl.style.display = 'none';
+
+        if (snapshot.metadata.hasPendingWrites) {
+             loadingEl.innerText = 'Syncing...';
+             loadingEl.style.display = 'block';
+        } else if (snapshot.empty) {
+            loadingEl.innerText = isGuestMode 
+                ? 'Could not load guest list. Ensure Owner ID is correct.' 
+                : 'No tasks found. Add one to get started!';
+            loadingEl.style.display = 'block';
+        } else {
+            loadingEl.style.display = 'none';
+        }
         controlsEl.style.display = 'flex';
+
     }, error => {
-        console.error("Listener Error:", error);
+        console.error("Error with real-time listener:", error);
         loadingEl.innerText = "Error loading tasks.";
     });
 }
 
 function renderFilteredAndSortedTasks() {
-    // ... (rest of the rendering functions remain the same)
     let tasksToRender = [...allTasks];
     const searchTerm = searchInput.value.toLowerCase();
     if (searchTerm) {
@@ -227,7 +356,7 @@ function createTaskCardHTML(task) {
     `;
 }
 
-// ... (rest of the modal and event listener functions are the same)
+// --- MODAL HANDLING ---
 function openModal(task = null) {
     if (isGuestMode) return;
     taskForm.reset();
@@ -291,8 +420,10 @@ taskForm.addEventListener('submit', async (e) => {
 
     try {
         if (id) {
-            await updateDoc(doc(db, `users/${userId}/tasks`, id), taskData);
+            const docRef = doc(db, `users/${userId}/tasks`, id);
+            await updateDoc(docRef, taskData);
         } else {
+            taskData.completed = false;
             taskData.createdAt = new Date();
             await addDoc(tasksCollectionRef, taskData);
         }
@@ -321,18 +452,24 @@ taskListEl.addEventListener('click', async (e) => {
         }
         return;
     }
+
     const card = e.target.closest('.task-card');
     if (!card) return;
     const id = card.id.replace('task-','');
+    
     if (e.target.matches('.task-checkbox')) {
-        await updateDoc(doc(db, `users/${userId}/tasks`, id), { completed: e.target.checked });
+        const docRef = doc(db, `users/${userId}/tasks`, id);
+        await updateDoc(docRef, { completed: e.target.checked });
     }
+    
     if (e.target.closest('.delete-btn')) {
         e.preventDefault();
         if (window.confirm('Are you sure you want to delete this task?')) {
-            await deleteDoc(doc(db, `users/${userId}/tasks`, id));
+            const docRef = doc(db, `users/${userId}/tasks`, id);
+            await deleteDoc(docRef);
         }
     }
+
     if (e.target.closest('.edit-btn')) {
         e.preventDefault();
         const taskToEdit = allTasks.find(t => t.id === id);
@@ -340,6 +477,7 @@ taskListEl.addEventListener('click', async (e) => {
     }
 });
 
+// --- THEME TOGGLE ---
 function applyTheme(theme) {
     if (theme === 'dark') {
         document.documentElement.classList.add('dark');
@@ -357,11 +495,12 @@ themeToggleBtn.addEventListener('click', () => {
     applyTheme(newTheme);
 });
 
+// --- INITIALIZATION ---
 function initializeApp() {
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     applyTheme(savedTheme || (prefersDark ? 'dark' : 'light'));
+    // Authentication is now fully handled by onAuthStateChanged and getRedirectResult
 }
 
 initializeApp();
-
