@@ -21,9 +21,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- PWA Icons -->
-    <link rel="apple-touch-icon" href="https://placehold.co/192x192/3b82f6/ffffff?text=CL">
-    <link rel="icon" type="image/png" sizes="192x192" href="https://placehold.co/192x192/3b82f6/ffffff?text=CL">
-    <link rel="icon" type="image/png" sizes="512x512" href="https://placehold.co/512x512/3b82f6/ffffff?text=CL">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon.png">
 
     <style>
         html {
@@ -215,7 +215,9 @@
     </div>
     
     <script type="module">
-        // Firebase Imports
+        // --- This is the single, consolidated script for the entire app ---
+
+        // Firebase Imports - Clean and guaranteed to have no duplicates.
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, collection, writeBatch, deleteDoc, updateDoc, onSnapshot, getDocs, enableIndexedDbPersistence, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -223,7 +225,7 @@
         // --- PWA Service Worker Registration ---
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
+                navigator.serviceWorker.register('./sw.js') // Use relative path
                     .then(registration => {
                         console.log('ServiceWorker registration successful with scope: ', registration.scope);
                     })
@@ -408,7 +410,7 @@
             }
         }
         
-        // --- DATA HANDLING & RENDERING (OPTIMIZED) ---
+        // --- DATA HANDLING & RENDERING ---
         async function loadAndDisplayTasks() {
             loadingEl.style.display = 'block';
             const initialCheck = await getDocs(tasksCollectionRef);
@@ -630,13 +632,13 @@
         function applyTheme(theme) {
             if (theme === 'dark') {
                 document.documentElement.classList.add('dark');
-                themeToggleLightIcon.classList.remove('hidden');
-                themeToggleDarkIcon.classList.add('hidden');
             } else {
                 document.documentElement.classList.remove('dark');
-                themeToggleDarkIcon.classList.remove('hidden');
-                themeToggleLightIcon.classList.add('hidden');
             }
+            // Update the icon regardless
+            const isDarkMode = document.documentElement.classList.contains('dark');
+            themeToggleLightIcon.classList.toggle('hidden', isDarkMode);
+            themeToggleDarkIcon.classList.toggle('hidden', !isDarkMode);
         }
 
         themeToggleBtn.addEventListener('click', () => {
