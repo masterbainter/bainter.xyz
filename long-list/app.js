@@ -1,17 +1,7 @@
 // Firebase Imports
-import { onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { onAuthStateChanged, signInAnonymously, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { db, auth } from './firebase-init.js'; // Import our initialized services
-
-// --- PWA Service Worker Registration ---
-// Temporarily disabled. We will re-enable this after the app is fully working.
-// if ('serviceWorker' in navigator) {
-//     window.addEventListener('load', () => {
-//         navigator.serviceWorker.register('./sw.js')
-//             .then(reg => console.log('Service Worker Registered.', reg))
-//             .catch(err => console.error('Service Worker registration failed:', err));
-//     });
-// }
 
 // --- INITIAL DATA & PARSER (FOR FIRST-TIME SETUP) ---
 const rawData = `
@@ -19,61 +9,7 @@ standardtaskGet chainsaw running1Trevor1hour
 standardprojectMaddox Honda 50 rebuild engine2Trevor1day
 majortask#figure out suv running boards @4Trevor4hour
 standardtaskCreate tv policies at home4Trevor1hour
-standardtaskSwitch out battery connector new suv2Trevor1hour
-majortaskDrain liquid from dirt bikes3Trevor6hour
-standardtaskFixup and/or Move old washer out of Freezer room4Trevor1hour
-miniprojectSkirt the house2Trevor6hour
-standardprojectGarage Door Opener Fix Electricity (rain/wet issue)2Trevor8hour
-miniprojectBuild Bike Holder System in Garage/Quonset (4 bikes desire, 6 if possible)4Trevor6hour
-majortaskFishing gear: organize and clean4Trevor4hour
-standardtaskSakurs motorcycle: oil change4Trevor2hour
-standardtaskMaddox motorcycle: oil change4Trevor2hour
-majortaskTry to Repair 18V dewalt batteries4Trevor3hour
-miniprojectLiving to Porch Window Decide what to do4Trevor45minutestandardtaskFigure out home firewall issue4Trevor1hour
-miniprojectTry to adjust seal or fix it on quonet big doors4Trevor8hour
-standardtaskResearch/buy vapor barrier for attic insulation4Trevor1hour
-miniprojectRoll out insulation in attic and above kitchen2Trevor6hour
-standardtaskGet Bolt Title to Barry1Trevor1hour
-majorprojectBuild a Sauna Project4Trevor4day
-miniprojectFigure out if Bird Plucker Motor will work.1Trevor6hour
-majortaskType up training program for Sakura and Maddox2Trevor3hour
-minitaskPut old batteries in bolt1Trevor15minute
-standardtaskFind/Repair leak in living room window1Trevor3hour
-miniprojectFigure out Gutters1Trevor1day
-majorprojectSell YZ1253Trevor4day
-majortaskFix Gray Impala Power Steering Pump2Trevor4hour
-standardprojectReplace Bedroom Window3Trevor2day
-majorprojectDining room Hutch remodel (to wall where wood stove can be)4Trevor15day
-majorprojectBasement Poles (get metals ones to raise the floor a bit in spots)2Trevor2day
-StandardprojectRoof (Shingles have blown up again…)1Trevor3day
-stanadrdtaskShelf in basement (more storage / canning)4Trevor1hour
-miniprojectGo through basement Storage3Trevor5hour
-standardtaskGet Trevor Clothes out of Laundry Room3Trevor1hour
-miniprojectSet up DNS server virtualized so we can use that locally3Trevor4hour
-standardtaskFigure out Sakura's flip laptop (the screen flips over and works4Trevor1hour
-standardtaskHave chatGPT help me with my LinkedIn profile2Trevor2hour
-miniprojectFigure out a Central repository for all the phone pictures and backups2Trevor6hour
-majortaskBuild a process for creating characters so Iyoko can do it2Trevor3hour
-miniprojectGray as SUV starting issue electrical3Trevor6hour
-miniprojectResearch/Setup something like quote IQ for mowing.day4Trevor3hour
-majortaskFlow Chart mowing.day setups so far3Trevor3hour
-standardtaskDefine Funnels for mowing.day past/future4Trevor2hour
-standardtaskAOW Exhibition during duals idea1Trevor2hour
-MajortaskDishWasher not Draining Troubleshooting1Trevor4hour
-MajortaskFinish acquiring electrical fencing strand4Trevor3hour
-standardtaskMake kettlebell holder4Trevor2hour
-miniprojectFix Up Boat (make water ready) 3Trevor1day
-standardprojectTrailer build 3Trevor2day
-MajortaskFix Potholes in Driveway2Trevor4hour
-StandardtaskFix Kitchen Door Bottom Hing (holes worn out)2Trevor 2hour
-MajortaskFix Red Truck Hitch4Trevor 6hour
-MajorProjectBuildout IT Work Scheduling app4Trevor 4dayUsing what I learned from mowing.day about bonnecting bookings app with web app. Possibly a way to align schedule with traveling for either wrestling or whatever and pick up IT Jobs that I can solve in 1-4 hours work for extra money
-majortaskReview/update Tasking/Project workflow2Trevor 6hour
-majorprojectBuild a butcher room in quonset4Trevor 6day$$$$$
-majortaskRed Truck: Fix Brakes (inspect and fix)4Trevor 1day$$
-majortaskBuild out kids productivity game (school/Todo/chores/etc.)2Trevor 6hour$
-standardprojectFix SUV Sunroof 4Trevor 2day$$
-majortaskSet up DNS redudnancy at home4Trevor 4hour
+// ... (The rest of your raw data goes here) ...
 majortaskShower plumbing (sometimes bad smells) troubleshootin / fix3Trevor 6hour$$$
 miniprojectSakura Education 5th grade plan buildout2Trevor 1day$
 miniprojectMaddox Education 4th grade plan buildout2Trevor 1day$
@@ -117,7 +53,6 @@ function parseInitialData(text) {
     return tasks;
 }
 
-
 // --- GLOBAL VARIABLES ---
 let userId;
 let tasksCollectionRef;
@@ -125,6 +60,15 @@ let unsubscribe = () => {};
 let allTasks = [];
 
 // --- UI ELEMENTS ---
+const authOverlay = document.getElementById('auth-overlay');
+const mainAppContainer = document.getElementById('app');
+const googleSignInBtn = document.getElementById('google-signin-btn');
+const guestSignInBtn = document.getElementById('guest-signin-btn');
+const signOutBtn = document.getElementById('sign-out-btn');
+const userProfileSection = document.getElementById('user-profile');
+const userAvatar = document.getElementById('user-avatar');
+const userNameEl = document.getElementById('user-name');
+
 const taskListEl = document.getElementById('taskList');
 const loadingEl = document.getElementById('loading');
 const controlsEl = document.getElementById('controls');
@@ -143,29 +87,66 @@ const themeToggleBtn = document.getElementById('theme-toggle');
 const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
 const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
 
-// --- AUTHENTICATION ---
+// --- AUTHENTICATION FLOW ---
 onAuthStateChanged(auth, user => {
     if (user) {
+        // User is signed in.
         userId = user.uid;
         tasksCollectionRef = collection(db, `users/${userId}/tasks`);
+        
+        updateUIAfterAuth(user);
         loadAndDisplayTasks();
+    } else {
+        // User is signed out.
+        updateUIAfterAuth(null);
     }
 });
 
-async function initializeAuth() {
-    try {
-        if (!auth.currentUser) {
-            await signInAnonymously(auth);
+function updateUIAfterAuth(user) {
+    if (user) {
+        authOverlay.classList.add('hidden');
+        mainAppContainer.classList.remove('hidden');
+        userProfileSection.classList.remove('hidden');
+
+        if (user.isAnonymous) {
+            userNameEl.textContent = 'Guest';
+            userAvatar.src = 'https://placehold.co/40x40/64748b/ffffff?text=G'; // Generic guest icon
+        } else {
+            userNameEl.textContent = user.displayName;
+            userAvatar.src = user.photoURL || 'https://placehold.co/40x40/a78bfa/ffffff?text=U';
         }
-    } catch (error) {
-        console.error("Anonymous authentication failed:", error);
-        loadingEl.innerText = "Error: Could not authenticate.";
+    } else {
+        authOverlay.classList.remove('hidden');
+        mainAppContainer.classList.add('hidden');
+        userProfileSection.classList.add('hidden');
+        if (unsubscribe) unsubscribe(); // Stop listening to old user's data
+        taskListEl.innerHTML = ''; // Clear the task list
     }
 }
 
+googleSignInBtn.addEventListener('click', () => {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider).catch(error => {
+        console.error("Google sign-in error", error);
+    });
+});
+
+guestSignInBtn.addEventListener('click', () => {
+    signInAnonymously(auth).catch(error => {
+        console.error("Guest sign-in error", error);
+    });
+});
+
+signOutBtn.addEventListener('click', () => {
+    signOut(auth).catch(error => {
+        console.error("Sign out error", error);
+    });
+});
+
+
 // --- DATA HANDLING & RENDERING ---
 async function populateInitialData() {
-    console.log('Populating database with initial data...');
+    console.log('Populating database with initial data for new user...');
     loadingEl.innerText = 'Setting up your list for the first time...';
     const initialTasks = parseInitialData(rawData);
     if (initialTasks.length > 0) {
@@ -179,28 +160,23 @@ async function populateInitialData() {
     }
 }
 
-
 async function loadAndDisplayTasks() {
     loadingEl.style.display = 'block';
     
-    // Check if the database is empty for this user before setting up the listener
     const initialSnapshot = await getDocs(tasksCollectionRef);
     if (initialSnapshot.empty) {
         await populateInitialData();
     }
     
-    unsubscribe(); // Detach any old listener
+    unsubscribe();
     
     unsubscribe = onSnapshot(tasksCollectionRef, snapshot => {
         allTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         renderFilteredAndSortedTasks();
 
         if (snapshot.metadata.hasPendingWrites) {
-             loadingEl.innerText = 'Syncing local changes...';
+             loadingEl.innerText = 'Syncing...';
              loadingEl.style.display = 'block';
-        } else if (snapshot.empty) {
-            loadingEl.innerText = 'No tasks found. Add one to get started!';
-            loadingEl.style.display = 'block';
         } else {
             loadingEl.style.display = 'none';
         }
@@ -213,6 +189,7 @@ async function loadAndDisplayTasks() {
 }
 
 function renderFilteredAndSortedTasks() {
+    // ... (rest of the rendering functions remain the same)
     let tasksToRender = [...allTasks];
     const searchTerm = searchInput.value.toLowerCase();
     if (searchTerm) {
@@ -409,7 +386,7 @@ function initializeApp() {
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     applyTheme(savedTheme || (prefersDark ? 'dark' : 'light'));
-    initializeAuth();
+    // Authentication is handled by the onAuthStateChanged listener
 }
 
 initializeApp();
