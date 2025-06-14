@@ -1,14 +1,14 @@
 // A new version name to force an update and clear old caches.
-const CACHE_NAME = 'checklist-pwa-v7'; 
+const CACHE_NAME = 'checklist-pwa-v8'; 
 
 // Only cache the local application files.
-// The browser will handle caching for external resources like Tailwind CSS.
+// The browser is very efficient at caching external resources like CSS from a CDN.
 const urlsToCache = [
   './', 
   './index.html',
   './app.js?v=7', // The version must match the one in index.html
   './firebase-init.js',
-  './icon.png' // Add the icon to the cache
+  './icon.png'
 ];
 
 
@@ -59,7 +59,7 @@ self.addEventListener('fetch', event => {
               return response;
             }
             
-            // Otherwise, fetch it from the network.
+            // Otherwise, fetch it from the network. The browser will cache it if possible.
             return fetch(event.request);
         })
     );
