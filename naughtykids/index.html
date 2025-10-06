@@ -1,0 +1,338 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query } from 'firebase/firestore';
+import { setLogLevel } from 'firebase/firestore';
+
+// --- Firebase Configuration ---
+// This configuration is provided by the environment.
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
+
+// --- Seasonal Theme Logic ---
+const getSeasonTheme = () => {
+    const month = new Date().getMonth(); // 0-11
+    // Autumn: Sept, Oct, Nov
+    if (month >= 8 && month <= 10) {
+        return {
+            name: 'Autumn',
+            bg: 'bg-amber-100',
+            header: 'text-orange-700',
+            accent: 'text-orange-600',
+            button: 'bg-orange-500',
+            buttonHover: 'hover:bg-orange-600',
+            buttonRing: 'focus:ring-orange-300',
+            inputBorder: 'border-orange-200',
+            inputFocusBorder: 'focus:border-orange-500',
+            inputFocusRing: 'focus:ring-orange-300',
+            emptyStateBg: 'bg-orange-50',
+            emptyStateBorder: 'border-orange-300',
+            emptyStateText: 'text-orange-700',
+            emptyStateSubtext: 'text-orange-600'
+        };
+    }
+    // Winter: Dec, Jan, Feb
+    if (month >= 11 || month <= 1) {
+        return {
+            name: 'Winter',
+            bg: 'bg-sky-100',
+            header: 'text-sky-700',
+            accent: 'text-sky-600',
+            button: 'bg-sky-500',
+            buttonHover: 'hover:bg-sky-600',
+            buttonRing: 'focus:ring-sky-300',
+            inputBorder: 'border-sky-200',
+            inputFocusBorder: 'focus:border-sky-500',
+            inputFocusRing: 'focus:ring-sky-300',
+            emptyStateBg: 'bg-sky-50',
+            emptyStateBorder: 'border-sky-300',
+            emptyStateText: 'text-sky-700',
+            emptyStateSubtext: 'text-sky-600'
+        };
+    }
+    // Spring: Mar, Apr, May
+    if (month >= 2 && month <= 4) {
+        return {
+            name: 'Spring',
+            bg: 'bg-emerald-100',
+            header: 'text-emerald-700',
+            accent: 'text-emerald-600',
+            button: 'bg-emerald-500',
+            buttonHover: 'hover:bg-emerald-600',
+            buttonRing: 'focus:ring-emerald-300',
+            inputBorder: 'border-emerald-200',
+            inputFocusBorder: 'focus:border-emerald-500',
+            inputFocusRing: 'focus:ring-emerald-300',
+            emptyStateBg: 'bg-emerald-50',
+            emptyStateBorder: 'border-emerald-300',
+            emptyStateText: 'text-emerald-700',
+            emptyStateSubtext: 'text-emerald-600'
+        };
+    }
+    // Summer: Jun, Jul, Aug
+    return {
+        name: 'Summer',
+        bg: 'bg-yellow-100',
+        header: 'text-yellow-700',
+        accent: 'text-yellow-600',
+        button: 'bg-yellow-500',
+        buttonHover: 'hover:bg-yellow-600',
+        buttonRing: 'focus:ring-yellow-300',
+        inputBorder: 'border-yellow-200',
+        inputFocusBorder: 'focus:border-yellow-500',
+        inputFocusRing: 'focus:ring-yellow-300',
+        emptyStateBg: 'bg-yellow-50',
+        emptyStateBorder: 'border-yellow-300',
+        emptyStateText: 'text-yellow-700',
+        emptyStateSubtext: 'text-yellow-600'
+    };
+};
+
+const consequences = [
+    { level: 5, text: "Talk with Dad" },
+    { level: 10, text: "No Fortnite" },
+    { level: 15, text: "Extra Workout" },
+    { level: 20, text: "Bed Early" }
+];
+
+// --- Main App Component ---
+export default function App() {
+    // --- State Management ---
+    const [kids, setKids] = useState([]);
+    const [newKidName, setNewKidName] = useState('');
+    const [auth, setAuth] = useState(null);
+    const [db, setDb] = useState(null);
+    const [userId, setUserId] = useState(null);
+    const [isAuthReady, setIsAuthReady] = useState(false);
+    const [error, setError] = useState('');
+
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-uh-oh-tracker';
+    const theme = getSeasonTheme();
+
+    // Effect for initializing Firebase and handling authentication
+    useEffect(() => {
+        try {
+            const app = initializeApp(firebaseConfig);
+            const authInstance = getAuth(app);
+            const dbInstance = getFirestore(app);
+            setLogLevel('debug');
+
+            setAuth(authInstance);
+            setDb(dbInstance);
+
+            const unsubscribe = onAuthStateChanged(authInstance, (user) => {
+                if (user) {
+                    setUserId(user.uid);
+                } else {
+                    signInAnonymously(authInstance).catch(err => {
+                        console.error("Anonymous sign-in failed:", err);
+                        setError("Could not connect to the tracker service.");
+                    });
+                }
+                setIsAuthReady(true);
+            });
+            return () => unsubscribe();
+        } catch (e) {
+            console.error("Firebase initialization error:", e);
+            setError("There was a problem starting the tracker. Please refresh.");
+        }
+    }, []);
+
+    // Effect for fetching and listening to data from Firestore
+    useEffect(() => {
+        if (!isAuthReady || !db || !userId) {
+            // Wait for authentication and DB to be ready
+            return;
+        }
+
+        const kidsCollectionPath = `artifacts/${appId}/users/${userId}/kids`;
+        const q = query(collection(db, kidsCollectionPath));
+
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const kidsData = [];
+            querySnapshot.forEach((doc) => {
+                kidsData.push({ id: doc.id, ...doc.data() });
+            });
+            // Sort by creation time to keep the list stable
+            kidsData.sort((a, b) => a.createdAt?.seconds - b.createdAt?.seconds);
+            setKids(kidsData);
+        }, (err) => {
+            console.error("Firestore snapshot error:", err);
+            setError("Could not load the tracker data. Please check your connection.");
+        });
+
+        return () => unsubscribe();
+    }, [isAuthReady, db, userId, appId]);
+
+    // --- Handlers ---
+    const handleAddKid = async (e) => {
+        e.preventDefault();
+        if (newKidName.trim() === '' || !db || !userId) return;
+
+        try {
+            const kidsCollectionPath = `artifacts/${appId}/users/${userId}/kids`;
+            await addDoc(collection(db, kidsCollectionPath), {
+                name: newKidName.trim(),
+                troubleCount: 0,
+                createdAt: new Date() // Use a server timestamp for ordering
+            });
+            setNewKidName('');
+        } catch (err) {
+            console.error("Error adding kid:", err);
+            setError("Failed to add new name.");
+        }
+    };
+
+    const incrementTrouble = async (kid) => {
+        if (!db || !userId) return;
+        const kidDocRef = doc(db, `artifacts/${appId}/users/${userId}/kids`, kid.id);
+        try {
+            await updateDoc(kidDocRef, {
+                troubleCount: kid.troubleCount + 1
+            });
+        } catch (err) {
+            console.error("Error incrementing trouble count:", err);
+            setError("Couldn't update the count.");
+        }
+    };
+
+    const resetTrouble = async (kid) => {
+        if (!db || !userId) return;
+        const kidDocRef = doc(db, `artifacts/${appId}/users/${userId}/kids`, kid.id);
+        try {
+            await updateDoc(kidDocRef, {
+                troubleCount: 0
+            });
+        } catch (err) {
+            console.error("Error resetting trouble count:", err);
+            setError("Couldn't reset the count.");
+        }
+    };
+
+    const deleteKid = async (kidId) => {
+        if (!db || !userId) return;
+        const kidDocRef = doc(db, `artifacts/${appId}/users/${userId}/kids`, kidId);
+        try {
+            await deleteDoc(kidDocRef);
+        } catch (err) {
+            console.error("Error deleting kid:", err);
+            setError("Couldn't remove the name.");
+        }
+    };
+
+    // --- UI Components ---
+    const ConsequenceItem = ({ text, achieved }) => {
+        return (
+            <li className={`flex items-center gap-2 transition-all duration-300 ${achieved ? 'text-gray-700' : 'text-gray-400 line-through'}`}>
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center ${achieved ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                    {achieved ? '✓' : '•'}
+                </span>
+                <span>{text}</span>
+            </li>
+        );
+    };
+
+    const KidCard = ({ kid }) => {
+        const [isAnimating, setIsAnimating] = useState(false);
+        const countColor = kid.troubleCount === 0 ? 'text-green-500' :
+                           kid.troubleCount < 3 ? 'text-yellow-500' :
+                           kid.troubleCount < 5 ? 'text-orange-500' : 'text-red-500';
+
+        const handleIncrement = () => {
+            incrementTrouble(kid);
+            setIsAnimating(true);
+            setTimeout(() => setIsAnimating(false), 300); // Animation duration
+        };
+
+        return (
+            <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 flex flex-col items-center gap-4 transition-transform duration-300 hover:scale-105 relative">
+                <button 
+                    onClick={() => deleteKid(kid.id)} 
+                    className="absolute top-2 right-2 text-gray-400 hover:text-red-500 transition-colors text-xl font-bold">
+                    &times;
+                </button>
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-700 text-center">{kid.name}</h2>
+                <div className={`text-7xl sm:text-8xl font-black ${countColor} transition-colors duration-300 ${isAnimating ? 'animate-bounce' : ''}`}>
+                    {kid.troubleCount}
+                </div>
+                <div className="w-full border-t border-gray-200 my-2"></div>
+                <div className="w-full">
+                    <h3 className="text-lg font-bold text-gray-600 mb-2 text-center">Consequences</h3>
+                    <ul className="space-y-2">
+                        {consequences.map(con => (
+                            <ConsequenceItem key={con.level} text={con.text} achieved={kid.troubleCount >= con.level} />
+                        ))}
+                    </ul>
+                </div>
+                <div className="w-full border-t border-gray-200 my-2"></div>
+                <div className="w-full flex flex-col sm:flex-row gap-3">
+                    <button
+                        onClick={handleIncrement}
+                        className="w-full bg-red-500 text-white font-bold py-3 px-4 rounded-xl shadow-md hover:bg-red-600 focus:outline-none focus:ring-4 focus:ring-red-300 transition-all duration-200 transform hover:-translate-y-1">
+                        +1 Uh-Oh!
+                    </button>
+                    <button
+                        onClick={() => resetTrouble(kid)}
+                        className="w-full bg-gray-200 text-gray-600 font-semibold py-3 px-4 rounded-xl hover:bg-gray-300 focus:outline-none focus:ring-4 focus:ring-gray-300 transition-all duration-200">
+                        Reset
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
+    // --- Main Render ---
+    return (
+        <div className={`${theme.bg} min-h-screen font-sans text-gray-800 transition-colors duration-500`} style={{ fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif" }}>
+            <div className="container mx-auto p-4 max-w-4xl">
+                <header className="text-center my-8">
+                    <h1 className={`text-5xl sm:text-6xl font-extrabold ${theme.header} drop-shadow-lg transition-colors duration-500`}>The Uh-Oh Tracker</h1>
+                    <p className={`${theme.accent} mt-2 text-lg transition-colors duration-500`}>A fun way to keep track of mischief! ({theme.name} Edition)</p>
+                </header>
+
+                {error && <div className="bg-red-200 text-red-800 p-3 rounded-lg text-center mb-4">{error}</div>}
+
+                <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg p-6 mb-8">
+                    <form onSubmit={handleAddKid} className="flex flex-col sm:flex-row gap-4 items-center">
+                        <input
+                            type="text"
+                            value={newKidName}
+                            onChange={(e) => setNewKidName(e.target.value)}
+                            placeholder="Enter a new name..."
+                            className={`flex-grow w-full px-4 py-3 text-lg border-2 ${theme.inputBorder} rounded-xl focus:outline-none focus:ring-4 ${theme.inputFocusRing} ${theme.inputFocusBorder} transition`}
+                        />
+                        <button
+                            type="submit"
+                            className={`w-full sm:w-auto ${theme.button} text-white font-bold py-3 px-8 rounded-xl shadow-md ${theme.buttonHover} focus:outline-none focus:ring-4 ${theme.buttonRing} transition-all duration-200 transform hover:-translate-y-1`}>
+                            Add
+                        </button>
+                    </form>
+                </div>
+
+                {!isAuthReady && <p className={`text-center ${theme.accent}`}>Warming up the tracker...</p>}
+                
+                {isAuthReady && kids.length === 0 && (
+                    <div className={`text-center ${theme.emptyStateBg} p-8 rounded-2xl border-2 border-dashed ${theme.emptyStateBorder}`}>
+                        <p className={`text-2xl ${theme.emptyStateText}`}>No one's in trouble... yet!</p>
+                        <p className={`${theme.emptyStateSubtext}`}>Add a name above to get started.</p>
+                    </div>
+                )}
+
+                <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {kids.map(kid => <KidCard key={kid.id} kid={kid} />)}
+                </main>
+
+                <footer className={`text-center ${theme.accent} mt-12 pb-4`}>
+                    <p>Made with fun and giggles.</p>
+                </footer>
+            </div>
+        </div>
+    );
+}
+
