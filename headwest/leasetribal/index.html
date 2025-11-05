@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rosebud Sioux Tribe Homesite Leasing Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Warm Neutrals with Sky Blue Accent -->
+    <!-- Application Structure Plan: The SPA is structured as a tabbed interface with five sections: Overview, The Process, Key Rules, Location, and Contacts. This design was chosen because the source material (answers to the user's query) is procedural and informational, not data-driven. A tabbed structure breaks the complex process into logical, digestible chunks, allowing the user to navigate directly to their area of interest (e.g., "The Process") without being overwhelmed. This is superior to a long, scrolling document for usability and clarity. The primary interaction is clicking the tabs, which dynamically displays the relevant content pane. -->
+    <!-- Visualization & Content Choices: 1. Report Info: The overall process. Goal: Organize/Inform. Viz/Method: A vertical step-by-step diagram built with HTML/CSS/Tailwind (styled divs, borders, and icons) in "The Process" tab. Interaction: Visual flow. Justification: A visual process flow is much easier to understand than text alone and is responsive. 2. Report Info: Key "Players" (BIA, Tribe). Goal: Inform. Viz/Method: A simple 2-column grid in the "Overview" section. Interaction: None. Justification: Clearly delineates responsibilities. 3. Report Info: Key Rules (Federal vs. Tribal). Goal: Compare/Inform. Viz/Method: A 2-column text layout in the "Key Rules" tab. Interaction: None. Justification: Easy side-by-side comparison. 4. Report Info: Location constraints. Goal: Inform. Viz/Method: A bulleted list of "Constraints" in the "Location" tab. Interaction: None. Justification: Clearly lists the "catches." CONFIRMS NO SVG/Mermaid. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        .active-tab {
+            border-color: #0369a1; /* sky-700 */
+            color: #0369a1; /* sky-700 */
+        }
+        .content-pane {
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-stone-50 font-sans text-stone-800 antialiased">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-5xl">
+        
+        <header class="mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-sky-800 mb-2">
+                Homesite Leasing Guide
+            </h1>
+            <p class="text-lg text-stone-600">
+                Information for enrolled members of the Rosebud Sioux Tribe
+            </p>
+        </header>
+
+        <nav class="mb-8">
+            <div class="flex flex-wrap border-b border-stone-300">
+                <button class="tab-btn px-3 py-3 sm:px-4 sm:py-3 text-sm sm:text-base font-medium border-b-2 active-tab" data-target="overview">
+                    Overview
+                </button>
+                <button class="tab-btn px-3 py-3 sm:px-4 sm:py-3 text-sm sm:text-base font-medium border-b-2 border-transparent text-stone-500 hover:text-stone-700" data-target="process">
+                    The Process
+                </button>
+                <button class="tab-btn px-3 py-3 sm:px-4 sm:py-3 text-sm sm:text-base font-medium border-b-2 border-transparent text-stone-500 hover:text-stone-700" data-target="rules">
+                    Key Rules
+                </button>
+                <button class="tab-btn px-3 py-3 sm:px-4 sm:py-3 text-sm sm:text-base font-medium border-b-2 border-transparent text-stone-500 hover:text-stone-700" data-target="location">
+                    Choosing a Location
+                </button>
+                <button class="tab-btn px-3 py-3 sm:px-4 sm:py-3 text-sm sm:text-base font-medium border-b-2 border-transparent text-stone-500 hover:text-stone-700" data-target="contacts">
+                    Key Contacts
+                </button>
+            </div>
+        </nav>
+
+        <main class="content-panes">
+            
+            <section id="overview" class="content-pane space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                    <h2 class="text-2xl font-semibold text-sky-700 mb-4">Understanding the Basics</h2>
+                    <p class="text-base text-stone-700 leading-relaxed">
+                        This section provides a high-level summary of the key concepts and entities involved in leasing land on the Rosebud Reservation. Understanding this foundation is the first step before starting the process.
+                    </p>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                    <h3 class="text-xl font-semibold text-stone-700 mb-4">What is "Trust Land"?</h3>
+                    <p class="mb-4 text-stone-700 leading-relaxed">
+                        Most land on the reservation is "trust land," which means the federal government (through the Bureau of Indian Affairs) holds the legal title in trust for the benefit of the Tribe or individual members (allottees). You don't "buy" this land like property off-reservation; you obtain a lease, which is a legal agreement to use the land for a specific purpose and time.
+                    </p>
+                    <ul class="list-disc list-inside space-y-2 text-stone-700">
+                        <li><strong>Tribal Trust Land:</strong> Land held in trust for the entire Rosebud Sioux Tribe. This is most often the land used for new homesite leases.</li>
+                        <li><strong>Allotted Land:</strong> Land held in trust for an individual tribal member or their heirs. Leasing this land can be very complex as it requires consent from all co-owners.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                    <h3 class="text-xl font-semibold text-stone-700 mb-4">Key Players in the Process</h3>
+                    <p class="mb-4 text-stone-700 leading-relaxed">
+                        The leasing process is a partnership between you, the Tribe, and the federal government.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="border border-stone-200 p-4 rounded-md">
+                            <h4 class="font-bold text-lg text-sky-700">Rosebud Sioux Tribe</h4>
+                            <p class="text-sm text-stone-600">Typically manages:</p>
+                            <ul class="list-disc list-inside mt-2 text-stone-700">
+                                <li>Tribal land use planning</li>
+                                <li>Applications for tribal land</li>
+                                <li>Zoning and ordinances</li>
+                                <li>Supporting member applications</li>
+                            </ul>
+                        </div>
+                        <div class="border border-stone-200 p-4 rounded-md">
+                            <h4 class="font-bold text-lg text-sky-700">Bureau of Indian Affairs (BIA)</h4>
+                            <p class="text-sm text-stone-600">Typically manages:</p>
+                            <ul class="list-disc list-inside mt-2 text-stone-700">
+                                <li>Final lease approval</li>
+                                <li>Environmental & cultural reviews</li>
+                                <li>Enforcing federal regulations</li>
+                                <li>Holding the land "in trust"</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="process" class="content-pane hidden space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                    <h2 class="text-2xl font-semibold text-sky-700 mb-4">The Homesite Leasing Process</h2>
+                    <p class="text-base text-stone-700 leading-relaxed">
+                        This is a simplified overview of the typical steps for leasing *tribal trust land* for a new homesite. This process is complex and can take a significant amount of time. Always work directly with the tribal and BIA offices for the most accurate guidance.
+                    </p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                    <h3 class="text-xl font-semibold text-stone-700 mb-6 text-center">Step-by-Step Flow</h3>
+                    <div class="relative max-w-md mx-auto">
+                        <div class="absolute left-1/2 top-0 bottom-0 w-0.5 bg-sky-200" style="transform: translateX(-50%);"></div>
+                        
+                        <div class="relative space-y-8">
+                            
+                            <div class="relative flex items-center">
+                                <div class="absolute left-1/2 w-6 h-6 bg-sky-600 rounded-full z-10 flex items-center justify-center" style="transform: translateX(-50%);">
+                                    <span class="text-white font-bold text-sm">1</span>
+                                </div>
+                                <div class="w-full pl-12">
+                                    <div class="bg-stone-50 border border-stone-200 p-4 rounded-lg shadow-sm">
+                                        <h4 class="font-semibold text-stone-800">Application & Eligibility</h4>
+                                        <p class="text-sm text-stone-600">Contact the RST Land Office. You must be an enrolled member to apply for a homesite lease.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="relative flex items-center">
+                                <div class="absolute left-1/2 w-6 h-6 bg-sky-600 rounded-full z-10 flex items-center justify-center" style="transform: translateX(-50%);">
+                                    <span class="text-white font-bold text-sm">2</span>
+                                </div>
+                                <div class="w-full pl-12">
+                                    <div class="bg-stone-50 border border-stone-200 p-4 rounded-lg shadow-sm">
+                                        <h4 class="font-semibold text-stone-800">Identify Land</h4>
+                                        <p class="text-sm text-stone-600">You may request a specific parcel of available tribal land. This request is subject to approval.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="relative flex items-center">
+                                <div class="absolute left-1/2 w-6 h-6 bg-sky-600 rounded-full z-10 flex items-center justify-center" style="transform: translateX(-50%);">
+                                    <span class="text-white font-bold text-sm">3</span>
+                                </div>
+                                <div class="w-full pl-12">
+                                    <div class="bg-stone-50 border border-stone-200 p-4 rounded-lg shadow-sm">
+                                        <h4 class="font-semibold text-stone-800">Tribal Review</h4>
+                                        <p class="text-sm text-stone-600">The Tribe reviews the request to ensure it fits the land-use plan and other tribal ordinances.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="relative flex items-center">
+                                <div class="absolute left-1/2 w-6 h-6 bg-sky-600 rounded-full z-10 flex items-center justify-center" style="transform: translateX(-50%);">
+                                    <span class="text-white font-bold text-sm">4</span>
+                                </div>
+                                <div class="w-full pl-12">
+                                    <div class="bg-stone-50 border border-stone-200 p-4 rounded-lg shadow-sm">
+                                        <h4 class="font-semibold text-stone-800">BIA Clearances</h4>
+                                        <p class="text-sm text-stone-600">The BIA must conduct environmental and archaeological surveys (NEPA). This can take time.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="relative flex items-center">
+                                <div class="absolute left-1/2 w-6 h-6 bg-sky-600 rounded-full z-10 flex items-center justify-center" style="transform: translateX(-50%);">
+                                    <span class="text-white font-bold text-sm">5</span>
+                                </div>
+                                <div class="w-full pl-12">
+                                    <div class="bg-stone-50 border border-stone-200 p-4 rounded-lg shadow-sm">
+                                        <h4 class="font-semibold text-stone-800">Lease Issuance & Final Approval</h4>
+                                        <p class="text-sm text-stone-600">If all reviews are clear, a lease document is prepared. It must be approved and signed by the BIA to be valid.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="rules" class="content-pane hidden space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                    <h2 class="text-2xl font-semibold text-sky-700 mb-4">Key Rules & Regulations</h2>
+                    <p class="text-base text-stone-700 leading-relaxed">
+                        Leasing on trust land is governed by a mix of federal and tribal laws. This section highlights the primary rules you'll encounter. These are not just guidelines; they are legal requirements for your lease.
+                    </p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                        <h3 class="text-xl font-semibold text-stone-700 mb-4">Federal Rules (BIA)</h3>
+                        <p class="mb-4 text-stone-700">These rules are from the Code of Federal Regulations (CFR), primarily 25 CFR Part 162.</p>
+                        <ul class="list-disc list-inside space-y-2 text-stone-700">
+                            <li><strong>Lease Term:</strong> Residential leases are typically for 25 years, often with an option to renew for another 25.</li>
+                            <li><strong>Use Limitation:</strong> The lease will be strictly for residential (homesite) purposes. You cannot run a business from it without a separate commercial lease.</li>
+                            <li><strong>Environmental Review:</strong> The BIA must comply with the National Environmental Policy Act (NEPA), which requires study of environmental and cultural impacts.</li>
+                            <li><strong>No Permanent Alienation:</strong> The land can never be sold by you and remains in trust status.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                        <h3 class="text-xl font-semibold text-stone-700 mb-4">Tribal Rules (RST)</h3>
+                        <p class="mb-4 text-stone-700">The Rosebud Sioux Tribe has its own laws and ordinances that apply to land use.</p>
+                        <ul class="list-disc list-inside space-y-2 text-stone-700">
+                            <li><strong>Enrollment:</strong> You must be an enrolled member to qualify for a tribal homesite lease.</li>
+                            <li><strong>Land Use & Zoning:</strong> The Tribe has a land-use plan that designates areas for residential, agricultural, or conservation use. Your request must match this plan.</li>
+                            <li><strong>Lot Size:</strong> The Tribe likely has rules on the maximum and minimum size of a homesite lot (e.g., 1-2.5 acres).</li>
+                            <li><strong>Tribal Approval:</strong> The Tribal Council or a designated lands committee will likely need to approve your application.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="location" class="content-pane hidden space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                    <h2 class="text-2xl font-semibold text-sky-700 mb-4">Can I Select Where I Want to Build?</h2>
+                    <p class="text-base text-stone-700 leading-relaxed">
+                        This is one of the most common questions. The simple answer is: **Yes, you can *request* a location, but it is not guaranteed.** This section explains the factors that determine if your chosen location is possible.
+                    </p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                    <h3 class="text-xl font-semibold text-stone-700 mb-4">Key Constraints on Location</h3>
+                    <p class="mb-4 text-stone-700 leading-relaxed">
+                        Your ability to build on a specific spot depends on several major factors:
+                    </p>
+                    <ul class="list-none space-y-4">
+                        <li class="flex items-start">
+                            <span class="text-sky-600 text-xl mr-3 mt-1">▶</span>
+                            <div>
+                                <h4 class="font-semibold">1. Land Availability & Status</h4>
+                                <p class="text-stone-700">Is the land already in use? Is it tribal trust land or an individual allotment? Requesting a site on available *tribal land* is the most straightforward path. Trying to build on an *allotment* is very difficult, as it requires getting a lease from all co-owners, which can be dozens of people.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-sky-600 text-xl mr-3 mt-1">▶</span>
+                            <div>
+                                <h4 class="font-semibold">2. Tribal Land-Use Plan</h4>
+                                <p class="text-stone-700">The Tribe has a master plan that zones land for specific uses. You cannot get a homesite lease for a spot that is zoned for agriculture, conservation, or commercial development. Your request must be in an area planned for residential use.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-sky-600 text-xl mr-3 mt-1">▶</span>
+                            <div>
+                                <h4 class="font-semibold">3. Infrastructure & Access</h4>
+                                <p class="text-stone-700">This is a major practical barrier. Does the site have access to roads, water, electricity, and sewer/septic systems? If not, the cost to add this infrastructure can be extremely high. The Tribe often encourages building in areas where this infrastructure already exists or is planned.</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-sky-600 text-xl mr-3 mt-1">▶</span>
+                            <div>
+                                <h4 class="font-semibold">4. Environmental & Cultural Review</h4>
+                                <p class="text-stone-700">The BIA review may find that the land is a sensitive wetland, a habitat for a protected species, or a site of cultural/historical importance. If so, a lease will not be approved for that location.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+            
+            <section id="contacts" class="content-pane hidden space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                    <h2 class="text-2xl font-semibold text-sky-700 mb-4">Key Contacts</h2>
+                    <p class="text-base text-stone-700 leading-relaxed">
+                        This process cannot be completed online. You must work directly with the offices below. Please contact them for official applications, fee schedules, and to start your process. (Note: Contact info is for guidance and should be verified).
+                    </p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                        <h3 class="text-xl font-semibold text-stone-700 mb-4">RST Land Office / TLE</h3>
+                        <p class="text-stone-700 mb-4">
+                            This should be your first call. They manage tribal land and can provide you with the initial application and guidance on the Tribe's specific requirements.
+                        </p>
+                        <p class="font-semibold text-stone-600">Rosebud, SD 57570</p>
+                        <p class="text-stone-600">(Please check official tribal directory for phone)</p>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200">
+                        <h3 class="text-xl font-semibold text-stone-700 mb-4">BIA Rosebud Agency</h3>
+                        <p class="text-stone-700 mb-4">
+                            The BIA is the federal trustee. Their realty department handles the federal side of the lease, including environmental reviews and final approval.
+                        </p>
+                        <p class="font-semibold text-stone-600">Rosebud, SD 57570</p>
+                        <p class="text-stone-600">(Please check federal directory for phone)</p>
+                    </div>
+                </div>
+            </section>
+            
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.tab-btn');
+            const panes = document.querySelectorAll('.content-pane');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetId = tab.getAttribute('data-target');
+
+                    tabs.forEach(t => {
+                        t.classList.remove('active-tab');
+                        t.classList.add('border-transparent', 'text-stone-500', 'hover:text-stone-700');
+                    });
+                    
+                    tab.classList.add('active-tab');
+                    tab.classList.remove('border-transparent', 'text-stone-500', 'hover:text-stone-700');
+
+                    panes.forEach(pane => {
+                        if (pane.id === targetId) {
+                            pane.classList.remove('hidden');
+                        } else {
+                            pane.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
