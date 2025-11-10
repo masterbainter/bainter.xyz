@@ -3,16 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kristin Joy Bainter - Professional Resume</title>
+    <title>Kristin Joy Bainter - Interactive Resume</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Load Inter font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Load icons from Lucide -->
-    <script type_sc="module" src="https://unpkg.com/lucide-react@latest/dist/lucide-react.js"></script>
-    <script nomodule src="https://unpkg.com/lucide-react@latest/dist/lucide-react.cjs"></script>
     <style>
         /* Use Inter as the default font */
         body {
@@ -24,6 +21,7 @@
         @media print {
             body {
                 font-size: 10pt;
+                background: #fff;
             }
             .no-print {
                 display: none;
@@ -33,6 +31,25 @@
             }
             .print-break-inside-avoid {
                 break-inside: avoid;
+            }
+            /* Ensure all content is visible for printing */
+            .tab-pane {
+                display: block !important; /* Show all tabs */
+                opacity: 1 !important;
+                visibility: visible !important;
+                height: auto !important;
+            }
+            .tab-content-container {
+                padding: 0;
+            }
+            .main-card {
+                padding: 0;
+                border: none;
+                box-shadow: none;
+            }
+            .print-header {
+                padding-bottom: 2rem;
+                border-bottom: 2px solid #e5e7eb;
             }
         }
         /* Icon wrapper */
@@ -46,154 +63,266 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body class="bg-gradient-to-br from-gray-50 to-blue-50 text-gray-800 min-h-screen">
 
-    <div class="max-w-4xl mx-auto p-4 sm:p-8 lg:p-12">
+    <div class="max-w-3xl mx-auto p-4 sm:p-8 lg:p-12">
         <!-- Main resume container -->
-        <div class="bg-white rounded-lg shadow-lg p-6 sm:p-10 lg:p-12 print-shadow-none">
+        <div class="bg-white rounded-xl shadow-2xl overflow-hidden print-shadow-none main-card">
 
             <!-- Header Section -->
-            <header class="flex flex-col sm:flex-row justify-between items-center pb-8 border-b border-gray-200">
+            <header class="text-center p-6 sm:p-10 print-header">
                 <!-- Name and Title -->
-                <div class="text-center sm:text-left mb-6 sm:mb-0">
-                    <h1 class="text-4xl lg:text-5xl font-bold text-gray-900">Kristin Joy Bainter</h1>
-                    <p class="text-xl lg:text-2xl text-blue-700 font-medium mt-1">Administrative & Accounting Professional</p>
-                </div>
+                <h1 class="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-700 to-indigo-700 bg-clip-text text-transparent">
+                    Kristin Joy Bainter
+                </h1>
+                <p class="text-xl lg:text-2xl text-gray-600 font-medium mt-2">
+                    Administrative & Accounting Professional
+                </p>
                 
-                <!-- Contact Info -->
-                <div class="flex flex-col items-center sm:items-end space-y-2 text-sm">
-                    <div class="flex items-center space-x-2 text-gray-600">
-                        <svg class="icon-wrapper" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                        <span>Winner, South Dakota</span>
+                <!-- Contact Buttons -->
+                <div class="mt-8 flex flex-wrap justify-center gap-3 no-print">
+                    <a href="tel:213-521-0494" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all hover:shadow-md hover:-translate-y-0.5 transform">
+                        <svg class="icon-wrapper text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                        (213) 521-0494
+                    </a>
+                    <a href="mailto:bainterkristin@gmail.com" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all hover:shadow-md hover:-translate-y-0.5 transform">
+                        <svg class="icon-wrapper text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+                        bainterkristin@gmail.com
+                    </a>
+                    <div class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full shadow-sm text-sm font-medium text-gray-700">
+                        <svg class="icon-wrapper text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        Winner, South Dakota
                     </div>
-                    <div class="flex items-center space-x-2 text-gray-600">
-                        <svg class="icon-wrapper" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                        <a href="tel:213-521-0494" class="hover:text-blue-700 hover:underline">(213) 521-0494</a>
-                    </div>
-                    <div class="flex items-center space-x-2 text-gray-600">
-                        <svg class="icon-wrapper" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
-                        <a href="mailto:bainterkristin@gmail.com" class="hover:text-blue-700 hover:underline">bainterkristin@gmail.com</a>
-                    </div>
+                    <button id="print-btn" class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-full shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all hover:shadow-md hover:-translate-y-0.5 transform">
+                        <svg class="icon-wrapper text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
+                        Download as PDF
+                    </button>
                 </div>
             </header>
 
-            <!-- Main Content Area -->
-            <main class="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-12">
-                
-                <!-- Left Column (Summary, Education, Skills) -->
-                <div class="lg:col-span-1 space-y-8">
+            <!-- Tab Navigation -->
+            <nav class="flex justify-center space-x-2 sm:space-x-4 p-4 bg-gray-50 border-t border-b border-gray-200 no-print">
+                <button data-tab="overview" class="tab-btn flex items-center gap-2 px-3 py-2 sm:px-5 sm:py-3 rounded-full font-semibold transition-all duration-300 shadow-sm">
+                    <svg class="icon-wrapper" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    <span class="hidden sm:inline">Overview</span>
+                </button>
+                <button data-tab="experience" class="tab-btn flex items-center gap-2 px-3 py-2 sm:px-5 sm:py-3 rounded-full font-semibold transition-all duration-300 shadow-sm">
+                    <svg class="icon-wrapper" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                    <span class="hidden sm:inline">Experience</span>
+                </button>
+                <button data-tab="skills" class="tab-btn flex items-center gap-2 px-3 py-2 sm:px-5 sm:py-3 rounded-full font-semibold transition-all duration-300 shadow-sm">
+                    <svg class="icon-wrapper" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    <span class="hidden sm:inline">Skills & Ed.</span>
+                </button>
+            </nav>
 
+            <!-- Main Content Area (Tabs) -->
+            <main class="p-6 sm:p-10 tab-content-container">
+                
+                <!-- Tab 1: Overview -->
+                <div id="tab-overview" class="tab-pane space-y-8">
                     <!-- Professional Summary -->
                     <section class="print-break-inside-avoid">
-                        <h2 class="text-xl font-bold text-blue-800 border-b-2 border-blue-200 pb-2 mb-4">
+                        <h2 class="text-2xl font-bold text-blue-800 mb-6">
                             Professional Summary
                         </h2>
                         <p class="text-gray-700 leading-relaxed">
                             Highly organized and detail-oriented administrative professional with strong experience in accounting, payroll, and financial transaction processing. Skilled in data entry, reconciliation, and record accuracy, with a proven ability to maintain confidentiality and efficiency. Dedicated to delivering excellent customer service and ensuring precision in every task. Seeking to apply administrative and accounting expertise in a Teller or Item Processor role within a financial institution.
                         </p>
                     </section>
-
-                    <!-- Education -->
+                     <!-- Additional Highlights -->
                     <section class="print-break-inside-avoid">
-                        <h2 class="text-xl font-bold text-blue-800 border-b-2 border-blue-200 pb-2 mb-4">
-                            Education
+                        <h2 class="text-2xl font-bold text-blue-800 mb-6">
+                            Additional Highlights
                         </h2>
-                        <div>
-                            <h3 class="font-semibold text-gray-900">High School Diploma Equivalent (GED)</h3>
-                        </div>
-                    </section>
-
-                    <!-- Skills -->
-                    <section class="print-break-inside-avoid">
-                        <h2 class="text-xl font-bold text-blue-800 border-b-2 border-blue-200 pb-2 mb-4">
-                            Skills
-                        </h2>
-                        <ul class="space-y-2">
-                            <li class="flex items-center">
-                                <svg class="icon-wrapper text-blue-700 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                <span>Transaction Processing & Data Entry</span>
+                        <ul class="space-y-3">
+                            <li class="flex items-start gap-3">
+                                <svg class="icon-wrapper text-blue-600 mt-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <span>Experienced with confidential financial documentation.</span>
                             </li>
-                            <li class="flex items-center">
-                                <svg class="icon-wrapper text-blue-700 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                <span>Financial Reconciliation & Record Management</span>
+                            <li class="flex items-start gap-3">
+                                <svg class="icon-wrapper text-blue-600 mt-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <span>Recognized for reliability, accuracy, and meeting deadlines.</span>
                             </li>
-                            <li class="flex items-center">
-                                <svg class="icon-wrapper text-blue-700 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                <span>Accounting & Payroll Processing</span>
-                            </li>
-                            <li class="flex items-center">
-                                <svg class="icon-wrapper text-blue-700 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                <span>Proficient in Microsoft Office (Excel, Word, Outlook)</span>
-                            </li>
-                            <li class="flex items-center">
-                                <svg class="icon-wrapper text-blue-700 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                <span>Cash Handling & Attention to Detail</span>
-                            </li>
-                            <li class="flex items-center">
-                                <svg class="icon-wrapper text-blue-700 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                <span>Customer Service & Communication</span>
-                            </li>
-                            <li class="flex items-center">
-                                <svg class="icon-wrapper text-blue-700 mr-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                <span>Time Management & Organization</span>
+                            <li class="flex items-start gap-3">
+                                <svg class="icon-wrapper text-blue-600 mt-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <span>Strong aptitude for learning banking systems and processing software.</span>
                             </li>
                         </ul>
                     </section>
-
                 </div>
-
-                <!-- Right Column (Experience, Highlights) -->
-                <div class="lg:col-span-2 space-y-8">
-                    
+                
+                <!-- Tab 2: Experience -->
+                <div id="tab-experience" class="tab-pane space-y-8 hidden">
                     <!-- Professional Experience -->
                     <section class="print-break-inside-avoid">
-                        <h2 class="text-xl font-bold text-blue-800 border-b-2 border-blue-200 pb-2 mb-4">
+                        <h2 class="text-2xl font-bold text-blue-800 mb-6">
                             Professional Experience
                         </h2>
                         
                         <!-- Job Entry -->
-                        <div class="mb-6">
+                        <div>
                             <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-2">
                                 <h3 class="text-lg font-bold text-gray-900">Frontier Motors</h3>
-                                <span class="font-medium text-gray-600">2023 – 2025</span>
+                                <span class="font-medium text-gray-600 text-sm sm:text-base">2023 – 2025</span>
                             </div>
-                            <h4 class="font-semibold text-blue-700 text-md mb-3">Administrative Assistant</h4>
+                            <h4 class="font-semibold text-blue-700 text-md mb-4">Administrative Assistant</h4>
                             
-                            <ul class="list-disc list-outside ml-5 space-y-2 text-gray-700 leading-relaxed">
-                                <li>Processed and reconciled accounts payable and receivable transactions, maintaining accurate financial records.</li>
-                                <li>Managed payroll processing and ensured timely, precise employee payments.</li>
-                                <li>Handled daily transaction processing, including credit card deals and monthly statement reconciliation.</li>
-                                <li>Entered and verified financial data with accuracy, ensuring compliance with accounting procedures.</li>
-                                <li>Coded, organized, and processed documents for recordkeeping and audit readiness.</li>
-                                <li>Collected and distributed incoming and outgoing mail while maintaining confidentiality of sensitive information.</li>
-                                <li>Supported general accounting functions and assisted with audit preparation and reporting.</li>
-                                <li>Delivered professional, customer-focused service in a fast-paced business environment.</li>
+                            <ul class="space-y-3">
+                                <li class="flex items-start gap-3">
+                                    <svg class="icon-wrapper text-blue-600 mt-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span>Processed and reconciled accounts payable and receivable transactions, maintaining accurate financial records.</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <svg class="icon-wrapper text-blue-600 mt-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span>Managed payroll processing and ensured timely, precise employee payments.</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <svg class="icon-wrapper text-blue-600 mt-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span>Handled daily transaction processing, including credit card deals and monthly statement reconciliation.</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <svg class="icon-wrapper text-blue-600 mt-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span>Entered and verified financial data with accuracy, ensuring compliance with accounting procedures.</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <svg class="icon-wrapper text-blue-600 mt-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span>Coded, organized, and processed documents for recordkeeping and audit readiness.</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <svg class="icon-wrapper text-blue-600 mt-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span>Collected and distributed incoming and outgoing mail while maintaining confidentiality of sensitive information.</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <svg class="icon-wrapper text-blue-600 mt-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span>Supported general accounting functions and assisted with audit preparation and reporting.</span>
+                                </li>
+                                <li class="flex items-start gap-3">
+                                    <svg class="icon-wrapper text-blue-600 mt-1" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span>Delivered professional, customer-focused service in a fast-paced business environment.</span>
+                                </li>
                             </ul>
                         </div>
                     </section>
-
-                    <!-- Additional Highlights -->
-                    <section class="print-break-inside-avoid">
-                        <h2 class="text-xl font-bold text-blue-800 border-b-2 border-blue-200 pb-2 mb-4">
-                            Additional Highlights
-                        </h2>
-                        <ul class="list-disc list-outside ml-5 space-y-2 text-gray-700 leading-relaxed">
-                            <li>Experienced with confidential financial documentation.</li>
-                            <li>Recognized for reliability, accuracy, and meeting deadlines.</li>
-                            <li>Strong aptitude for learning banking systems and processing software.</li>
-                        </ul>
-                    </section>
                 </div>
-            </main>
+                
+                <!-- Tab 3: Skills & Education -->
+                <div id="tab-skills" class="tab-pane space-y-8 hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                        <!-- Skills -->
+                        <section class="print-break-inside-avoid">
+                            <h2 class="text-2xl font-bold text-blue-800 mb-6">
+                                Skills
+                            </h2>
+                            <ul class="space-y-3">
+                                <li class="flex items-center gap-3">
+                                    <svg class="icon-wrapper text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span>Transaction Processing & Data Entry</span>
+                                </li>
+                                <li class="flex items-center gap-3">
+                                    <svg class="icon-wrapper text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span>Financial Reconciliation & Record Management</span>
+                                </li>
+                                <li class="flex items-center gap-3">
+                                    <svg class="icon-wrapper text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span>Accounting & Payroll Processing</span>
+                                </li>
+                                <li class="flex items-center gap-3">
+                                    <svg class="icon-wrapper text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span>Proficient in Microsoft Office (Excel, Word, Outlook)</span>
+                                </li>
+                                <li class="flex items-center gap-3">
+                                    <svg class="icon-wrapper text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span>Cash Handling & Attention to Detail</span>
+                                </li>
+                                <li class="flex items-center gap-3">
+                                    <svg class="icon-wrapper text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span>Customer Service & Communication</span>
+                                </li>
+                                <li class="flex items-center gap-3">
+                                    <svg class="icon-wrapper text-blue-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <span>Time Management & Organization</span>
+                                </li>
+                            </ul>
+                        </section>
 
+                        <!-- Education -->
+                        <section class="print-break-inside-avoid">
+                            <h2 class="text-2xl font-bold text-blue-800 mb-6">
+                                Education
+                            </h2>
+                            <div>
+                                <h3 class="font-semibold text-gray-900">High School Diploma Equivalent (GED)</h3>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+
+            </main>
         </div>
         
         <!-- Footer -->
         <footer class="text-center mt-6 text-sm text-gray-500 no-print">
-            <p>This resume was generated as a single-page web application.</p>
+            <p>Interactive resume built with Tailwind CSS & JavaScript.</p>
         </footer>
 
     </div>
+    
+    <!-- JavaScript for Tabs and Print Button -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabs = document.querySelectorAll('.tab-btn');
+            const panes = document.querySelectorAll('.tab-pane');
+            const printBtn = document.getElementById('print-btn');
+
+            // --- Tab logic ---
+            const activeClasses = 'bg-blue-600 text-white';
+            const inactiveClasses = 'bg-gray-100 text-gray-600 hover:bg-gray-200';
+
+            function showTab(tabId) {
+                // Hide all panes
+                panes.forEach(pane => {
+                    pane.classList.add('hidden');
+                });
+
+                // Deactivate all tabs
+                tabs.forEach(tab => {
+                    tab.classList.remove(...activeClasses.split(' '));
+                    tab.classList.add(...inactiveClasses.split(' '));
+                });
+
+                // Show target pane
+                const targetPane = document.getElementById(`tab-${tabId}`);
+                if (targetPane) {
+                    targetPane.classList.remove('hidden');
+                }
+
+                // Activate target tab
+                const targetTab = document.querySelector(`button[data-tab="${tabId}"]`);
+                if (targetTab) {
+                    targetTab.classList.remove(...inactiveClasses.split(' '));
+                    targetTab.classList.add(...activeClasses.split(' '));
+                }
+            }
+
+            // Add click listeners to tabs
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    showTab(tab.dataset.tab);
+                });
+            });
+
+            // Show 'overview' tab by default
+            showTab('overview');
+
+            // --- Print button logic ---
+            if (printBtn) {
+                printBtn.addEventListener('click', () => {
+                    window.print();
+                });
+            }
+        });
+    </script>
 
 </body>
 </html>
