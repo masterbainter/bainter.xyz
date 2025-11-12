@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Quiz App</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar for the tabs */
+        .tab-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+        .tab-scroll::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1; /* slate-300 */
+            border-radius: 10px;
+        }
+        .tab-scroll::-webkit-scrollbar-track {
+            background-color: #f1f5f9; /* slate-100 */
+        }
+        /* Active tab style */
+        .tab-active {
+            border-color: #3b82f6; /* blue-500 */
+            background-color: #eff6ff; /* blue-50 */
+            color: #2563eb; /* blue-600 */
+            font-weight: 600;
+        }
+        
+        /* Answer feedback styles */
+        .correct-answer {
+            background-color: #dcfce7; /* green-100 */
+            border-color: #22c55e; /* green-500 */
+        }
+        .incorrect-answer {
+            background-color: #fee2e2; /* red-100 */
+            border-color: #ef4444; /* red-500 */
+        }
+        .answer-label {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem; /* p-3 */
+            border-width: 1px;
+            border-color: #e2e8f0; /* slate-200 */
+            border-radius: 0.5rem; /* rounded-lg */
+            cursor: pointer;
+            transition: background-color 0.15s ease-in-out;
+        }
+        .answer-label:hover {
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .answer-label input {
+            margin-right: 0.75rem; /* mr-3 */
+        }
+        /* Simple spinner */
+        .spinner {
+            border: 4px solid #f3f3f3; /* Light grey */
+            border-top: 4px solid #3b82f6; /* Blue */
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans p-4 md:p-8">
+
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInAnonymously, 
+            signInWithCustomToken, 
+            onAuthStateChanged,
+            setPersistence,
+            inMemoryPersistence
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            getDoc, 
+            setDoc, 
+            addDoc, 
+            collection, 
+            getDocs, 
+            query, 
+            where, 
+            serverTimestamp,
+            writeBatch,
+            setLogLevel
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- GLOBAL APP STATE ---
+        let db, auth, appId, userId;
+        let selectedBookId = null;
+        let selectedChapterId = null;
+
+        // --- UI ELEMENT HOOKS ---
+        const authStatus = document.getElementById('auth-status');
+        const userIdDisplay = document.getElementById('user-id-display');
+        const mainLoading = document.getElementById('main-loading');
+        const appContainer = document.getElementById('app-container');
+        const seedButton = document.getElementById('seed-button');
+        const seedLoading = document.getElementById('seed-loading');
+        const seedMessage = document.getElementById('seed-message');
+        const bookList = document.getElementById('book-list');
+        const chapterTabs = document.getElementById('chapter-tabs');
+        const quizContainer = document.getElementById('quiz-container');
+        const sectionTitle = document.getElementById('section-title');
+
+        // --- 1. FIREBASE INITIALIZATION ---
+        async function initFirebase() {
+            try {
+                // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                // !! IMPORTANT: PASTE YOUR FIREBASE CONFIG HERE !!
+                // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                // You can get this from your Firebase project console:
+                // Project Settings > General > Your apps > Web app
+                const firebaseConfig = {
+                    apiKey: "AIzaSyBqBn-aP35BlJY1FeLgfaf6I8cyMRzxKhU",
+                    authDomain: "bainter-book-quizzes.firebaseapp.com",
+                    projectId: "bainter-book-quizzes", // <-- You provided this!
+                    storageBucket: "bainter-book-quizzes.firebasestorage.app",
+                    messagingSenderId: "1029138348029",
+                    appId: "1:1029138348029:web:77bc8b96f0a86bbfd38b94"
+                };
+                
+                // --- This is the new App ID ---
+                appId = firebaseConfig.bainter-book-quizzes; // Use your project ID as the app ID
+
+                if (firebaseConfig.apiKey === "AIzaSyBqBn-aP35BlJY1FeLgfaf6I8cyMRzxKhU") {
+                    authStatus.textContent = "Error: Please paste your Firebase config into quiz_app.html.";
+                    return;
+                }
+
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('Debug'); // Enable detailed Firestore logs
+
+                // Use in-memory persistence for this demo
+                await setPersistence(auth, inMemoryPersistence);
+
+                setupAuthListener();
+            } catch (error) {
+                console.error("Firebase Init Error:", error);
+                authStatus.textContent = "Error initializing Firebase.";
+            }
+        }
+
+        // --- 2. AUTHENTICATION ---
+        function setupAuthListener() {
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    authStatus.textContent = "Signed in as:";
+                    userIdDisplay.textContent = userId;
+                    mainLoading.classList.add('hidden');
+                    appContainer.classList.remove('hidden');
+                    
+                    // Once authenticated, load the books
+                    await loadBooks();
+                } else {
+                    // No user, attempt to sign in
+                    userId = null;
+                    authStatus.textContent = "Signing in...";
+                    userIdDisplay.textContent = "";
+                    try {
+                        // Sign in anonymously since this is a demo app.
+                        // You could add Google/Email sign-in later.
+                        await signInAnonymously(auth);
+                    } catch (error) {
+                        console.error("Sign-in Error:", error);
+                        authStatus.textContent = "Authentication Failed. Please reload.";
+                    }
+                }
+            });
+        }
+
+        // --- 3. DATA LOADING (PUBLIC) ---
+        
+        /**
+         * Loads the list of books from the public collection
+         */
+        async function loadBooks() {
+            if (!db || !appId) return;
+
+            showLoading(bookList, "Loading books...");
+            bookList.innerHTML = '';
+            
+            try {
+                const bookCollectionRef = collection(db, `artifacts/${appId}/public/data/books`);
+                const querySnapshot = await getDocs(bookCollectionRef);
+                
+                if (querySnapshot.empty) {
+                    bookList.innerHTML = '<p class="text-slate-500">No books found. Have you seeded the database?</p>';
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const book = doc.data();
+                    const bookButton = document.createElement('button');
+                    bookButton.className = "w-full text-left p-4 bg-white hover:bg-slate-50 border rounded-lg shadow-sm";
+                    bookButton.innerHTML = `
+                        <h3 class="font-semibold text-lg text-blue-600">${book.title}</h3>
+                        <p class="text-sm text-slate-600">by ${book.author}</p>
+                    `;
+                    bookButton.onclick = () => {
+                        selectedBookId = doc.id;
+                        loadChapters(doc.id, book.title);
+                    };
+                    bookList.appendChild(bookButton);
+                });
+            } catch (error) {
+                console.error("Error loading books:", error);
+                bookList.innerHTML = '<p class="text-red-500">Error loading books. Check console.</p>';
+            }
+        }
+
+        /**
+         * Loads chapters for a selected book
+         */
+        async function loadChapters(bookId, bookTitle) {
+            sectionTitle.textContent = `${bookTitle} Chapters`;
+            showLoading(chapterTabs, "Loading chapters...");
+            quizContainer.innerHTML = '';
+            chapterTabs.innerHTML = '';
+
+            try {
+                const chapterCollectionRef = collection(db, `artifacts/${appId}/public/data/books/${bookId}/chapters`);
+                const querySnapshot = await getDocs(chapterCollectionRef);
+                
+                if (querySnapshot.empty) {
+                    chapterTabs.innerHTML = '<p class="text-slate-500">No chapters found for this book.</p>';
+                    return;
+                }
+                
+                // Sort chapters by title (e.g., "Chapter 1", "Chapter 2")
+                const chapters = [];
+                querySnapshot.forEach(doc => {
+                    chapters.push({ id: doc.id, ...doc.data() });
+                });
+                // Simple sort, assumes "Chapter X" format
+                chapters.sort((a, b) => {
+                    const numA = parseInt(a.title.split(' ')[1]);
+                    const numB = parseInt(b.title.split(' ')[1]);
+                    return numA - numB;
+                });
+
+
+                chapters.forEach((chapter, index) => {
+                    const tabButton = document.createElement('button');
+                    tabButton.className = "tab-button whitespace-nowrap py-4 px-4 border-b-2 border-transparent font-medium text-sm text-slate-500 hover:text-blue-600 hover:border-blue-300";
+                    tabButton.textContent = `Ch. ${index + 1}`;
+                    tabButton.dataset.chapterId = chapter.id;
+
+                    if (index === 0) {
+                        tabButton.classList.add('tab-active');
+                        selectedChapterId = chapter.id;
+                        loadQuiz(bookId, chapter.id);
+                    }
+
+                    tabButton.onclick = () => {
+                        // Deactivate all tabs
+                        chapterTabs.querySelectorAll('.tab-button').forEach(t => t.classList.remove('tab-active'));
+                        // Activate clicked tab
+                        tabButton.classList.add('tab-active');
+                        selectedChapterId = chapter.id;
+                        loadQuiz(bookId, chapter.id);
+                    };
+                    chapterTabs.appendChild(tabButton);
+                });
+
+            } catch (error) {
+                console.error("Error loading chapters:", error);
+                chapterTabs.innerHTML = '<p class="text-red-500">Error loading chapters. Check console.</p>';
+            }
+        }
+
+        /**
+         * Loads the quiz questions for a selected chapter
+         */
+        async function loadQuiz(bookId, chapterId) {
+            showLoading(quizContainer, "Loading quiz...");
+            quizContainer.innerHTML = '';
+
+            try {
+                const questionsCollectionRef = collection(db, `artifacts/${appId}/public/data/books/${bookId}/chapters/${chapterId}/questions`);
+                const querySnapshot = await getDocs(questionsCollectionRef);
+
+                if (querySnapshot.empty) {
+                    quizContainer.innerHTML = '<p class="text-slate-500">No questions found for this chapter.</p>';
+                    return;
+                }
+                
+                const questions = [];
+                querySnapshot.forEach(doc => {
+                    questions.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Sort by question number
+                questions.sort((a, b) => a.order - b.order);
+
+                const quizForm = document.createElement('div');
+                quizForm.className = "space-y-6";
+
+                questions.forEach((q, index) => {
+                    const questionDiv = document.createElement('div');
+                    questionDiv.dataset.questionId = q.id;
+                    questionDiv.dataset.correct = q.correctAnswer;
+                    questionDiv.dataset.type = q.type;
+
+                    let questionHTML = `<p class="font-medium mb-2">${index + 1}. ${q.text}</p>`;
+                    
+                    if (q.type === 'mcq') {
+                        questionHTML += '<div class="space-y-2">';
+                        q.options.forEach((option, optionIndex) => {
+                            questionHTML += `
+                                <label class="answer-label">
+                                    <input type="radio" name="q-${q.id}" value="${optionIndex}">
+                                    <span>${option}</span>
+                                </label>
+                            `;
+                        });
+                        questionHTML += '</div>';
+                    } else if (q.type === 'short_answer') {
+                        questionHTML += `
+                            <textarea class="w-full p-2 border border-slate-300 rounded-md" rows="2" placeholder="Type your answer here..."></textarea>
+                            <div class="answer-feedback text-sm mt-2 hidden p-3 bg-blue-50 border border-blue-200 rounded-md"></div>
+                        `;
+                    }
+                    questionDiv.innerHTML = questionHTML;
+                    quizForm.appendChild(questionDiv);
+                });
+
+                // Add controls
+                const controlsDiv = document.createElement('div');
+                controlsDiv.className = "quiz-controls mt-6";
+                controlsDiv.innerHTML = `
+                    <button id="check-quiz-btn" class="px-5 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Check Answers & Save</button>
+                    <div class="quiz-results mt-4 font-semibold text-lg hidden"></div>
+                `;
+                
+                quizContainer.appendChild(quizForm);
+                quizContainer.appendChild(controlsDiv);
+
+                // Add event listener to the new button
+                document.getElementById('check-quiz-btn').onclick = (e) => {
+                    const btn = e.target;
+                    if (btn.textContent.includes('Check')) {
+                        checkAndSaveQuiz(bookId, chapterId);
+                        btn.textContent = 'Quiz Saved! Reset?';
+                    } else {
+                        // Reset
+                        loadQuiz(bookId, chapterId);
+                    }
+                };
+
+            } catch (error) {
+                console.error("Error loading quiz:", error);
+                quizContainer.innerHTML = '<p class="text-red-500">Error loading quiz. Check console.</p>';
+            }
+        }
+
+        // --- 4. QUIZ SUBMISSION (PRIVATE) ---
+        async function checkAndSaveQuiz(bookId, chapterId) {
+            if (!userId) return;
+
+            const questions = quizContainer.querySelectorAll('[data-question-id]');
+            const resultsDiv = quizContainer.querySelector('.quiz-results');
+            let score = 0;
+            let total = 0;
+            const userAnswers = [];
+
+            questions.forEach(q => {
+                const questionId = q.dataset.questionId;
+                const type = q.dataset.type;
+                const correctAnswer = q.dataset.correct;
+
+                if (type === 'mcq') {
+                    total++;
+                    const checkedRadio = q.querySelector('input[type="radio"]:checked');
+                    const correctLabel = q.querySelector(`input[value="${correctAnswer}"]`)?.closest('label');
+
+                    if (correctLabel) {
+                        correctLabel.classList.add('correct-answer');
+                    }
+
+                    let selectedAnswerIndex = null;
+                    let isCorrect = false;
+
+                    if (checkedRadio) {
+                        const checkedLabel = checkedRadio.closest('label');
+                        selectedAnswerIndex = parseInt(checkedRadio.value);
+                        
+                        if (checkedRadio.value === correctAnswer) {
+                            score++;
+                            isCorrect = true;
+                        } else {
+                            checkedLabel.classList.add('incorrect-answer');
+                        }
+                    }
+                    userAnswers.push({ questionId, type, answer: selectedAnswerIndex, isCorrect });
+                } else if (type === 'short_answer') {
+                    const textarea = q.querySelector('textarea');
+                    const feedbackDiv = q.querySelector('.answer-feedback');
+                    feedbackDiv.innerHTML = `<strong>Suggested Answer:</strong> ${correctAnswer}`;
+                    feedbackDiv.classList.remove('hidden');
+                    
+                    userAnswers.push({ questionId, type, answer: textarea.value, modelAnswer: correctAnswer });
+                }
+            });
+
+            // Display results
+            if (total > 0) {
+                resultsDiv.innerHTML = `You got ${score} out of ${total} multiple-choice questions correct. Score saved!`;
+                resultsDiv.classList.remove('hidden');
+            }
+
+            // Save to Firestore
+            try {
+                const attemptData = {
+                    userId,
+                    bookId,
+                    chapterId,
+                    score,
+                    total,
+                    answers: userAnswers,
+                    timestamp: serverTimestamp()
+                };
+                const attemptCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/quizAttempts`);
+                await addDoc(attemptCollectionRef, attemptData);
+                console.log("Quiz attempt saved!");
+
+            } catch (error) {
+                console.error("Error saving quiz attempt:", error);
+                resultsDiv.innerHTML += ' <span class="text-red-500">(Error saving score)</span>';
+            }
+        }
+        
+        // --- 5. UI HELPERS ---
+        function showLoading(container, message) {
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center p-8 text-slate-500">
+                    <div class="spinner"></div>
+                    <p class="mt-4">${message}</p>
+                </div>
+            `;
+        }
+
+        // --- 6. DATABASE SEEDER (RUN ONCE) ---
+        seedButton.onclick = async () => {
+            seedButton.disabled = true;
+            seedLoading.classList.remove('hidden');
+            seedMessage.textContent = 'Seeding in progress... This may take a moment.';
+
+            try {
+                // Check if already seeded
+                const bookRef = doc(db, `artifacts/${appId}/public/data/books/shiloh`);
+                const bookSnap = await getDoc(bookRef);
+                if (bookSnap.exists()) {
+                    seedMessage.textContent = 'Database already contains "Shiloh". Loading books.';
+                    seedLoading.classList.add('hidden');
+                    await loadBooks();
+                    return;
+                }
+
+                // --- Start Seeding ---
+                const batch = writeBatch(db);
+                
+                // 1. Create the Book
+                batch.set(bookRef, {
+                    title: "Shiloh",
+                    author: "Phyllis Reynolds Naylor"
+                });
+
+                // 2. Add all chapters and questions
+                // This uses the data from our static file.
+                const shilohData = getShilohSeedData();
+
+                for (const chapter of shilohData) {
+                    // Create a chapter doc
+                    const chapterRef = doc(collection(db, `artifacts/${appId}/public/data/books/shiloh/chapters`));
+                    batch.set(chapterRef, { title: chapter.title });
+
+                    // Create question subcollection
+                    for (const question of chapter.questions) {
+                        const questionRef = doc(collection(db, chapterRef.path, "questions"));
+                        batch.set(questionRef, question);
+                    }
+                }
+
+                // 3. Commit the batch
+                await batch.commit();
+
+                seedLoading.classList.add('hidden');
+                seedMessage.textContent = 'Seeding complete! "Shiloh" is now in the database.';
+                seedButton.classList.add('hidden');
+                
+                // Reload the book list
+                await loadBooks();
+
+            } catch (error) {
+                console.error("Database Seeding Error:", error);
+                seedLoading.classList.add('hidden');
+                seedMessage.textContent = 'Error seeding database. See console for details.';
+                seedButton.disabled = false;
+            }
+        };
+        
+        /**
+         * Contains all quiz data for Shiloh.
+         * This is a helper function just for seeding.
+         */
+        function getShilohSeedData() {
+            return [
+                { title: 'Chapter 1', questions: [
+                    { order: 1, type: 'mcq', text: 'What kind of dog does Marty find?', options: ['A golden retriever', 'A beagle', 'A german shepherd'], correctAnswer: '1' },
+                    { order: 2, type: 'mcq', text: 'What does Marty name the dog?', options: ['Buddy', 'Sparky', 'Shiloh'], correctAnswer: '2' },
+                    { order: 3, type: 'mcq', text: "Who is the dog's mean owner?", options: ['Mr. Preston', 'Judd Travers', 'Doc Murphy'], correctAnswer: '1' },
+                    { order: 4, type: 'short_answer', text: 'Why is Marty worried about the dog?', correctAnswer: "He thinks Judd Travers abuses the dog (kicks him and doesn't feed him enough)." }
+                ]},
+                { title: 'Chapter 2', questions: [
+                    { order: 1, type: 'mcq', text: 'What does Marty decide to do with Shiloh?', options: ['Hide him from his family and Judd', 'Take him back to Judd right away', 'Give him to Doc Murphy'], correctAnswer: '0' },
+                    { order: 2, type: 'mcq', text: 'Where does Marty make a pen for Shiloh?', options: ['In his bedroom', 'In the barn', 'On the hill beyond his house'], correctAnswer: '2' },
+                    { order: 3, type: 'mcq', text: 'What does Marty use to make the pen?', options: ['Chicken wire', 'Old fencing and wire', 'Wooden boards'], correctAnswer: '1' },
+                    { order: 4, type: 'short_answer', text: 'Who is the first person Marty lies to (or avoids the truth with) about Shiloh?', correctAnswer: "His father (He whistles, and when his dad asks what, he says 'nothing')." }
+                ]},
+                { title: 'Chapter 3', questions: [
+                    { order: 1, type: 'mcq', text: "What is Marty's biggest problem with hiding Shiloh?", options: ['Shiloh keeps barking', 'He needs to get food for him', 'Shiloh keeps escaping'], correctAnswer: '1' },
+                    { order: 2, type: 'mcq', text: 'How does Marty get food for Shiloh?', options: ['He buys dog food at the store', 'He asks his friend David for help', 'He saves part of his own supper'], correctAnswer: '2' },
+                    { order: 3, type: 'mcq', text: 'Who almost catches Marty with the food?', options: ['His mother (Ma)', 'His sister, Dara Lynn', 'Judd Travers'], correctAnswer: '0' },
+                    { order: 4, type: 'short_answer', text: 'What does Marty feel bad about in this chapter?', correctAnswer: 'He feels guilty and bad about lying to his parents.' }
+                ]},
+                { title: 'Chapter 4', questions: [
+                    { order: 1, type: 'mcq', text: 'Who is the first family member to find out about Shiloh?', options: ['His sister Dara Lynn', 'His mother (Ma)', 'His father (Dad)'], correctAnswer: '2' },
+                    { order: 2, type: 'mcq', text: 'How does this person find out?', options: ['His dad follows him up the hill', 'Marty confesses and tells him', 'Dara Lynn tattles on him'], correctAnswer: '0' },
+                    { order: 3, type: 'mcq', text: "What does Marty's dad say Marty has to do?", options: ['Build a better pen', 'Return Shiloh to Judd Travers', 'Take Shiloh to the vet'], correctAnswer: '1' },
+                    { order: 4, type: 'short_answer', text: 'How much time does his dad give him?', correctAnswer: "He gives him until Sunday (a couple of days) to think about it and prepare." }
+                ]},
+                { title: 'Chapter 5', questions: [
+                    { order: 1, type: 'mcq', text: 'Who is the second family member to find out about Shiloh?', options: ['His sister Dara Lynn', 'His mother (Ma)', 'His sister Becky'], correctAnswer: '1' },
+                    { order: 2, type: 'mcq', text: 'What terrible thing happens to Shiloh at the end of the chapter?', options: ['He gets badly hurt in a dog fight', 'He runs away for good', 'Judd Travers comes and takes him'], correctAnswer: '0' },
+                    { order: 3, type: 'mcq', text: 'What animal attacked Shiloh?', options: ['A coyote', "One of Judd's other dogs", 'A big German shepherd'], correctAnswer: '2' }
+                ]},
+                { title: 'Chapter 6', questions: [
+                    { order: 1, type: 'mcq', text: 'Who do Marty and his dad take Shiloh to for help?', options: ['Judd Travers', 'Doc Murphy', 'Mr. Baker (owner of the German shepherd)'], correctAnswer: '1' },
+                    { order: 2, type: 'mcq', text: "What does Marty's dad tell Doc Murphy?", options: ['The whole truth about Marty hiding Shiloh', "A lie, saying it's their dog", 'That they found him hurt on the road'], correctAnswer: '0' },
+                    { order: 3, type: 'mcq', text: 'Where does Shiloh stay while he gets better?', options: ["At Marty's house", "At Judd's house", "At Doc Murphy's clinic in a cage"], correctAnswer: '2' }
+                ]},
+                { title: 'Chapter 7', questions: [
+                    { order: 1, type: 'mcq', text: "Who sees Marty visiting Shiloh at Doc Murphy's?", options: ['Judd Travers', 'David Howard', 'His dad'], correctAnswer: '0' },
+                    { order: 2, type: 'mcq', text: "Now that the secret is out, what does Marty's dad say will happen?", options: ['They can keep Shiloh', "Shiloh must go back to Judd when he's better", 'They will give Shiloh to David Howard'], correctAnswer: '1' },
+                    { order: 3, type: 'mcq', text: 'What "job" does Marty get to help pay for Shiloh\'s vet bill?', options: ['Mowing lawns', 'Delivering newspapers', 'Collecting cans and bottles to recycle'], correctAnswer: '2' }
+                ]},
+                { title: 'Chapter 8', questions: [
+                    { order: 1, type: 'mcq', text: "Where does Shiloh get to stay once he's better?", options: ["At Doc Murphy's", 'Back with Judd', "At Marty's house, in a box inside"], correctAnswer: '2' },
+                    { order: 2, type: 'mcq', text: 'Who comes to the house asking about his dog?', options: ['Judd Travers', 'Doc Murphy', 'Mr. Baker'], correctAnswer: '0' },
+                    { order: 3, type: 'mcq', text: 'What does Marty promise his dad he will NOT do?', options: ['Lie to him again', 'Run away with Shiloh', 'Talk to Judd Travers'], correctAnswer: '1' }
+                ]},
+                { title: 'Chapter 9', questions: [
+                    { order: 1, type: 'mcq', text: 'What does Marty offer to do for Judd Travers?', options: ['Pay him $50', 'Give him his collection of cans', 'Work for him'], correctAnswer: '2' },
+                    { order: 2, type: 'mcq', text: 'What is the first job Judd gives Marty?', options: ['Clean his chimney', 'Stack firewood', 'Feed his other dogs'], correctAnswer: '1' },
+                    { order: 3, type: 'mcq', text: "How does Judd treat Marty while he's working?", options: ['He is mean and calls him names', 'He is surprisingly nice and helpful', 'He ignores him completely'], correctAnswer: '0' }
+                ]},
+                { title: 'Chapter 10', questions: [
+                    { order: 1, type: 'mcq', text: 'On his way to work for Judd, what does Marty see Judd do?', options: ['Hit one of his other dogs', 'Shoot a deer', 'Steal mail from a mailbox'], correctAnswer: '1' },
+                    { order: 2, type: 'mcq', text: 'Why is this a big deal?', options: ["It's not hunting season (it's illegal)", 'Judd missed the shot', "The deer was on Marty's land"], correctAnswer: '0' },
+                    { order: 3, type: 'mcq', text: 'What does Marty realize this information gives him?', options: ['A reason to be scared of Judd', 'A way to get money from Judd', 'Power over Judd (blackmail)'], correctAnswer: '2' }
+                ]},
+                { title: 'Chapter 11', questions: [
+                    { order: 1, type: 'mcq', text: 'Does Marty tell his dad about the deer?', options: ['Yes, right away', 'No, he keeps it a secret', 'He tells his mom instead'], correctAnswer: '1' },
+                    { order: 2, type: 'mcq', text: "When Marty goes to Judd's, what does he ask him?", options: ['If he will sell Shiloh', 'If he shot the deer', 'Why he is so mean to his dogs'], correctAnswer: '0' },
+                    { order: 3, type: 'mcq', text: 'How does Marty let Judd know that he saw him shoot the deer?', options: ['He shows him a picture he took', 'He tells him his dad saw him', 'He describes exactly where the deer was'], correctAnswer: '2' }
+                ]},
+                { title: 'Chapter 12', questions: [
+                    { order: 1, type: 'mcq', text: 'What deal does Marty make with Judd for Shiloh?', options: ['Marty will work for Judd', 'Marty will pay Judd $100', 'Marty will keep the deer secret for free'], correctAnswer: '0' },
+                    { order: 2, type: 'mcq', text: 'How many hours does Marty have to work?', options: ['10 hours', '20 hours', '40 hours'], correctAnswer: '1' },
+                    { order: 3, type: 'mcq', text: 'What is the one condition Judd makes about the deal?', options: ["Marty has to feed Judd's other dogs", 'Marty has to tell his dad', "Marty can't tell anyone about the deer"], correctAnswer: '2' }
+                ]},
+                { title: 'Chapter 13', questions: [
+                    { order: 1, type: 'mcq', text: "How does Judd's treatment of Marty change?", options: ['He gets meaner', 'He is a little nicer (offers a drink)', "It doesn't change at all"], correctAnswer: '1' },
+                    { order: 2, type: 'mcq', text: "What does Marty's mom send with him for Judd?", options: ['A piece of pie or cake', 'Money for Shiloh', 'A note for his dad'], correctAnswer: '0' },
+                    { order: 3, type: 'mcq', text: 'What does Marty worry about as he gets close to finishing his hours?', options: ['That Judd will give him more work', 'That his dad will find out about the deer', 'That Judd will back out of the deal'], correctAnswer: '2' }
+                ]},
+                { title: 'Chapter 14', questions: [
+                    { order: 1, type: 'mcq', text: 'When Marty finishes his hours, what does Judd do?', options: ['He honors the deal and gives Marty the dog', 'He tries to back out of the deal', 'He tells Marty he has to work 10 more hours'], correctAnswer: '0' },
+                    { order: 2, type: 'mcq', text: 'What does Judd give Marty along with the dog?', options: ['A bag of dog food', 'A dog collar', 'Five dollars'], correctAnswer: '1' },
+                    { order: 3, type: 'mcq', text: 'What does Judd admit about Shiloh?', options: ['That he was his favorite dog', 'That he stole him from someone else', 'That he was never a good hunting dog'], correctAnswer: '2' }
+                ]},
+                { title: 'Chapter 15', questions: [
+                    { order: 1, type: 'mcq', text: 'Who is the first person Marty tells the whole truth to (about the deer)?', options: ['His dad', 'His mom', 'David Howard'], correctAnswer: '0' },
+                    { order: 2, type: 'mcq', text: 'How does Marty's dad react to the news about the deer?', options: ['He is very angry at Marty', 'He makes Marty tell the game warden', 'He is quiet, but understands and is proud'], correctAnswer: '2' },
+                    { order: 3, type: 'mcq', text: "What does Marty's dad buy at the end of the book?", options: ['A new dog house', 'A new dog collar', 'A bag of dog treats'], correctAnswer: '1' }
+                ]}
+            ];
+        }
+
+        // --- START THE APP ---
+        document.addEventListener('DOMContentLoaded', initFirebase);
+    </script>
+
+    <!-- Main App Container -->
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+        
+        <!-- Header & Auth Status -->
+        <header class="bg-blue-600 text-white p-6">
+            <h1 class="text-3xl font-bold">Book Quiz App</h1>
+            <div class="mt-2 p-3 bg-blue-700 rounded-lg text-sm">
+                <p id="auth-status" class="font-semibold">Initializing...</p>
+                <p id="user-id-display" class="text-blue-200 text-xs break-all"></p>
+            </div>
+        </header>
+
+        <!-- Initial Loading Spinner -->
+        <div id="main-loading" class="p-8 flex justify-center">
+            <div class="spinner"></div>
+        </div>
+
+        <!-- Main App Content (Hidden by default) -->
+        <div id="app-container" class="hidden">
+
+            <!-- Seeder Button (Show first) -->
+            <div id="seeder-container" class="p-6 border-b border-slate-200 bg-yellow-50">
+                <h2 class="font-semibold text-lg text-yellow-800">One-Time Database Setup</h2>
+                <p class="text-sm text-yellow-700 mt-1">This app needs quiz data. Click the button to add the "Shiloh" quizzes to the database.</p>
+                <button id="seed-button" class"mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-slate-400">
+                    Seed Database with "Shiloh"
+                </button>
+                <div id="seed-loading" class="hidden flex items-center mt-4">
+                    <div class="spinner !w-5 !h-5 !border-2 !border-t-blue-500"></div>
+                    <span class="ml-2 text-sm text-slate-600">Seeding...</span>
+                </div>
+                <p id="seed-message" class="text-sm font-medium text-green-700 mt-2"></p>
+            </div>
+
+            <!-- Book Selection -->
+            <div class="p-6 border-b border-slate-200">
+                <h2 class="text-2xl font-semibold text-slate-800">Select a Book</h2>
+                <div id="book-list" class="mt-4 space-y-3">
+                    <!-- Books will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Chapter & Quiz Content -->
+            <div class="p-6">
+                <h2 id="section-title" class="text-2xl font-semibold text-slate-800">Select a Book to See Chapters</h2>
+                
+                <!-- Tab Navigation -->
+                <div class="border-b border-slate-200 mt-4">
+                    <nav id="chapter-tabs" class="flex overflow-x-auto tab-scroll -mb-px px-4" aria-label="Tabs">
+                        <!-- Chapter tabs will be loaded here -->
+                    </nav>
+                </div>
+
+                <!-- Quiz Content -->
+                <div id="quiz-container" class="mt-6">
+                    <!-- Quiz questions will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
