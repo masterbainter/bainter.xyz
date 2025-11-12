@@ -73,11 +73,12 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
             getAuth, 
-            signInAnonymously, 
-            signInWithCustomToken, 
             onAuthStateChanged,
             setPersistence,
-            inMemoryPersistence
+            inMemoryPersistence,
+            GoogleAuthProvider,
+            signInWithPopup,
+            signOut
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
             getFirestore, 
@@ -101,8 +102,11 @@
 
         // --- UI ELEMENT HOOKS ---
         const authStatus = document.getElementById('auth-status');
-        const userIdDisplay = document.getElementById('user-id-display');
+        const userDisplayName = document.getElementById('user-display-name');
+        const signOutButton = document.getElementById('sign-out-button');
         const mainLoading = document.getElementById('main-loading');
+        const loginContainer = document.getElementById('login-container');
+        const loginButton = document.getElementById('login-button');
         const appContainer = document.getElementById('app-container');
         const seedButton = document.getElementById('seed-button');
         const seedLoading = document.getElementById('seed-loading');
@@ -125,15 +129,16 @@
                     authDomain: "bainter-book-quizzes.firebaseapp.com",
                     projectId: "bainter-book-quizzes", // <-- You provided this!
                     storageBucket: "bainter-book-quizzes.firebasestorage.app",
-                    messagingSenderId: "1029138348029",
+                    messagingSenderId: "1029138348029,
                     appId: "1:1029138348029:web:77bc8b96f0a86bbfd38b94"
                 };
                 
                 // --- This is the new App ID ---
-                appId = firebaseConfig.bainter-book-quizzes; // Use your project ID as the app ID
+                appId = bainter-book-quizzes; // Use your project ID as the app ID
 
                 if (firebaseConfig.apiKey === "AIzaSyBqBn-aP35BlJY1FeLgfaf6I8cyMRzxKhU") {
                     authStatus.textContent = "Error: Please paste your Firebase config into quiz_app.html.";
+                    mainLoading.classList.add('hidden');
                     return;
                 }
 
@@ -155,31 +160,53 @@
         // --- 2. AUTHENTICATION ---
         function setupAuthListener() {
             onAuthStateChanged(auth, async (user) => {
+                mainLoading.classList.add('hidden'); // Hide loading spinner
+
                 if (user) {
+                    // --- User is SIGNED IN ---
                     userId = user.uid;
                     authStatus.textContent = "Signed in as:";
-                    userIdDisplay.textContent = userId;
-                    mainLoading.classList.add('hidden');
-                    appContainer.classList.remove('hidden');
+                    userDisplayName.textContent = `${user.displayName} (${user.email})`;
+                    signOutButton.classList.remove('hidden');
+                    
+                    appContainer.classList.remove('hidden'); // Show the main app
+                    loginContainer.classList.add('hidden');  // Hide the login button
+
+                    // Add sign-out functionality
+                    signOutButton.onclick = () => signOut(auth);
                     
                     // Once authenticated, load the books
                     await loadBooks();
                 } else {
-                    // No user, attempt to sign in
+                    // --- User is SIGNED OUT ---
                     userId = null;
-                    authStatus.textContent = "Signing in...";
-                    userIdDisplay.textContent = "";
-                    try {
-                        // Sign in anonymously since this is a demo app.
-                        // You could add Google/Email sign-in later.
-                        await signInAnonymously(auth);
-                    } catch (error) {
-                        console.error("Sign-in Error:", error);
-                        authStatus.textContent = "Authentication Failed. Please reload.";
-                    }
+                    authStatus.textContent = "Please sign in to start.";
+                    userDisplayName.textContent = "";
+                    signOutButton.classList.add('hidden');
+                    
+                    appContainer.classList.add('hidden');    // Hide the main app
+                    loginContainer.classList.remove('hidden');// Show the login button
                 }
             });
         }
+
+        /**
+         * Triggers the Google Sign-in Popup
+         */
+        async function signInWithGoogle() {
+            const provider = new GoogleAuthProvider();
+            try {
+                // This will trigger the onAuthStateChanged listener
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("Google Sign-in Error:", error);
+                authStatus.textContent = "Error signing in. Please try again.";
+            }
+        }
+        
+        // Add listener to the login button
+        loginButton.onclick = signInWithGoogle;
+
 
         // --- 3. DATA LOADING (PUBLIC) ---
         
@@ -368,7 +395,7 @@
 
         // --- 4. QUIZ SUBMISSION (PRIVATE) ---
         async function checkAndSaveQuiz(bookId, chapterId) {
-            if (!userId) return;
+            if (!userId) return; // Should not happen if user is logged in
 
             const questions = quizContainer.querySelectorAll('[data-question-id]');
             const resultsDiv = quizContainer.querySelector('.quiz-results');
@@ -534,7 +561,7 @@
                     { order: 1, type: 'mcq', text: "What is Marty's biggest problem with hiding Shiloh?", options: ['Shiloh keeps barking', 'He needs to get food for him', 'Shiloh keeps escaping'], correctAnswer: '1' },
                     { order: 2, type: 'mcq', text: 'How does Marty get food for Shiloh?', options: ['He buys dog food at the store', 'He asks his friend David for help', 'He saves part of his own supper'], correctAnswer: '2' },
                     { order: 3, type: 'mcq', text: 'Who almost catches Marty with the food?', options: ['His mother (Ma)', 'His sister, Dara Lynn', 'Judd Travers'], correctAnswer: '0' },
-                    { order: 4, type: 'short_answer', text: 'What does Marty feel bad about in this chapter?', correctAnswer: 'He feels guilty and bad about lying to his parents.' }
+                    { order: 4, type: 'short_answer', text: 'What. does Marty feel bad about in this chapter?', correctAnswer: 'He feels guilty and bad about lying to his parents.' }
                 ]},
                 { title: 'Chapter 4', questions: [
                     { order: 1, type: 'mcq', text: 'Who is the first family member to find out about Shiloh?', options: ['His sister Dara Lynn', 'His mother (Ma)', 'His father (Dad)'], correctAnswer: '2' },
@@ -588,7 +615,7 @@
                     { order: 3, type: 'mcq', text: 'What does Marty worry about as he gets close to finishing his hours?', options: ['That Judd will give him more work', 'That his dad will find out about the deer', 'That Judd will back out of the deal'], correctAnswer: '2' }
                 ]},
                 { title: 'Chapter 14', questions: [
-                    { order: 1, type: 'mcq', text: 'When Marty finishes his hours, what does Judd do?', options: ['He honors the deal and gives Marty the dog', 'He tries to back out of the deal', 'He tells Marty he has to work 10 more hours'], correctAnswer: '0' },
+                    { order: 1, type: 'mcq', text: 'When Marty finishes his hours, what does Judd do?', options: ['He honors the deal and gives Marty the dog', 'He tries to back out of the deal', 'He tells Marty to work 10 more hours'], correctAnswer: '0' },
                     { order: 2, type: 'mcq', text: 'What does Judd give Marty along with the dog?', options: ['A bag of dog food', 'A dog collar', 'Five dollars'], correctAnswer: '1' },
                     { order: 3, type: 'mcq', text: 'What does Judd admit about Shiloh?', options: ['That he was his favorite dog', 'That he stole him from someone else', 'That he was never a good hunting dog'], correctAnswer: '2' }
                 ]},
@@ -609,16 +636,32 @@
         
         <!-- Header & Auth Status -->
         <header class="bg-blue-600 text-white p-6">
-            <h1 class="text-3xl font-bold">Book Quiz App</h1>
+            <div class="flex justify-between items-center">
+                <h1 class="text-3xl font-bold">Book Quiz App</h1>
+                <button id="sign-out-button" class="hidden px-4 py-2 bg-blue-500 hover:bg-blue-400 text-white text-sm font-medium rounded-md">
+                    Sign Out
+                </button>
+            </div>
             <div class="mt-2 p-3 bg-blue-700 rounded-lg text-sm">
                 <p id="auth-status" class="font-semibold">Initializing...</p>
-                <p id="user-id-display" class="text-blue-200 text-xs break-all"></p>
+                <p id="user-display-name" class="text-blue-200 text-xs break-all"></p>
             </div>
         </header>
 
         <!-- Initial Loading Spinner -->
-        <div id="main-loading" class="p-8 flex justify-center">
+        <div id="main-loading" class="p-8 flex flex-col items-center justify-center">
             <div class="spinner"></div>
+            <p class="mt-4 text-slate-500">Connecting to Firebase...</p>
+        </div>
+
+        <!-- Login View (Hidden by default) -->
+        <div id="login-container" class="hidden p-8 flex flex-col items-center justify-center border-b">
+            <h2 class="text-2xl font-semibold text-slate-800">Welcome!</h2>
+            <p class="text-slate-600 mt-2">Please sign in to continue.</p>
+            <button id="login-button" class="mt-6 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 flex items-center">
+                <svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><defs><path id="a" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/></defs><clipPath id="b"><use xlink:href="#a" overflow="visible"/></clipPath><path clip-path="url(#b)" fill="#FBBC05" d="M0 37V11l17 13z"/><path clip-path="url(#b)" fill="#EA4335" d="M0 11l17 13 7-6.1L48 14V0H0z"/><path clip-path="url(#b)" fill="#34A853" d="M0 37l30-23 7.9 1L48 0v48H0z"/><path clip-path="url(#b)" fill="#4285F4" d="M48 48L17 24l-4-3 35-10z"/></svg>
+                Sign in with Google
+            </button>
         </div>
 
         <!-- Main App Content (Hidden by default) -->
