@@ -64,6 +64,23 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* Style for the <details> summary */
+        details > summary {
+            cursor: pointer;
+            list-style: none; /* Remove default triangle */
+        }
+        details > summary::-webkit-details-marker {
+            display: none; /* Remove default triangle */
+        }
+        details > summary::before {
+            content: '▶'; /* Collapsed state */
+            margin-right: 0.5rem;
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+        details[open] > summary::before {
+            transform: rotate(90deg); /* Expanded state */
+        }
     </style>
 </head>
 <body class="bg-slate-100 font-sans p-4 md:p-8">
@@ -99,6 +116,8 @@
         let db, auth, appId, userId;
         let selectedBookId = null;
         let selectedChapterId = null;
+        let newQuizQuestions = []; // Temporary array for the new quiz form
+        const adminEmail = "techride.trevor@gmail.com"; // Admin email check
 
         // --- UI ELEMENT HOOKS ---
         const authStatus = document.getElementById('auth-status');
@@ -108,21 +127,58 @@
         const loginContainer = document.getElementById('login-container');
         const loginButton = document.getElementById('login-button');
         const appContainer = document.getElementById('app-container');
+        
+        // Admin Panel (gets shown/hidden based on email)
+        const adminPanelContainer = document.getElementById('admin-panel-container');
+
+        // Seeder
         const seedButton = document.getElementById('seed-button');
         const seedLoading = document.getElementById('seed-loading');
         const seedMessage = document.getElementById('seed-message');
+        
+        // Main Quiz UI
         const bookList = document.getElementById('book-list');
         const chapterTabs = document.getElementById('chapter-tabs');
         const quizContainer = document.getElementById('quiz-container');
         const sectionTitle = document.getElementById('section-title');
+
+        // Admin Panel: Create Book
+        const createBookForm = document.getElementById('create-book-form');
+        const bookTitleInput = document.getElementById('book-title-input');
+        const bookAuthorInput = document.getElementById('book-author-input');
+        const createBookMessage = document.getElementById('create-book-message');
+
+        // Admin Panel: Create Quiz
+        const createQuizForm = document.getElementById('create-quiz-form');
+        const adminBookSelect = document.getElementById('admin-book-select');
+        const adminChapterTitle = document.getElementById('admin-chapter-title');
+        const adminQuestionList = document.getElementById('admin-question-list');
+        const addQuestionButton = document.getElementById('add-question-button');
+        const saveChapterButton = document.getElementById('save-chapter-button');
+        const createChapterMessage = document.getElementById('create-chapter-message');
+
+        // Admin Panel: New Question Modal (part of create-quiz-form)
+        const newQuestionModal = document.getElementById('new-question-modal');
+        const questionTextInput = document.getElementById('question-text-input');
+        const questionTypeSelect = document.getElementById('question-type-select');
+        const mcqOptionsContainer = document.getElementById('mcq-options-container');
+        const shortAnswerContainer = document.getElementById('short-answer-container');
+        const shortAnswerInput = document.getElementById('short-answer-input');
+        const mcqOptionInputs = document.getElementById('mcq-option-inputs');
+        const addOptionButton = document.getElementById('add-option-button');
+        const mcqCorrectAnswerSelect = document.getElementById('mcq-correct-answer-select');
+        const saveQuestionButton = document.getElementById('save-question-button');
+        const cancelQuestionButton = document.getElementById('cancel-question-button');
 
         // --- 1. FIREBASE INITIALIZATION ---
         async function initFirebase() {
             try {
                 
                 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                // !!    YOUR FIREBASE CONFIG IS NOW HERE      !!
+                // !! IMPORTANT: PASTE YOUR FIREBASE CONFIG HERE !!
                 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                // You can get this from your Firebase project console:
+                // Project Settings > General > Your apps > Web app
                 const firebaseConfig = {
                     apiKey: "AIzaSyBqBn-aP35BlJY1FeLgfaf6I8cyMRzxKhU",
                     authDomain: "bainter-book-quizzes.firebaseapp.com",
@@ -135,6 +191,12 @@
                 // --- This is the new App ID ---
                 appId = firebaseConfig.projectId; // Use your project ID as the app ID
                 
+                if (firebaseConfig.apiKey.startsWith("YOUR_")) {
+                    authStatus.textContent = "Error: Please paste your Firebase config into quiz_app.html.";
+                    mainLoading.classList.add('hidden');
+                    return;
+                }
+
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
@@ -154,6 +216,7 @@
         function setupAuthListener() {
             onAuthStateChanged(auth, async (user) => {
                 mainLoading.classList.add('hidden'); // Hide loading spinner
+                adminPanelContainer.classList.add('hidden'); // Hide admin panel by default
 
                 if (user) {
                     // --- User is SIGNED IN ---
@@ -167,6 +230,12 @@
 
                     // Add sign-out functionality
                     signOutButton.onclick = () => signOut(auth);
+                    
+                    // *** ADMIN CHECK ***
+                    // Check if the signed-in user is the admin
+                    if (user.email === adminEmail) {
+                        adminPanelContainer.classList.remove('hidden'); // Show the admin panel
+                    }
                     
                     // Once authenticated, load the books
                     await loadBooks();
@@ -204,13 +273,14 @@
         // --- 3. DATA LOADING (PUBLIC) ---
         
         /**
-         * Loads the list of books from the public collection
+         * Loads books for BOTH the main quiz list and the admin panel dropdown
          */
         async function loadBooks() {
             if (!db || !appId) return;
 
             showLoading(bookList, "Loading books...");
             bookList.innerHTML = '';
+            adminBookSelect.innerHTML = '<option value="">Select a book...</option>'; // Clear admin dropdown
             
             try {
                 const bookCollectionRef = collection(db, `artifacts/${appId}/public/data/books`);
@@ -223,6 +293,8 @@
 
                 querySnapshot.forEach((doc) => {
                     const book = doc.data();
+                    
+                    // 1. Populate main quiz list
                     const bookButton = document.createElement('button');
                     bookButton.className = "w-full text-left p-4 bg-white hover:bg-slate-50 border rounded-lg shadow-sm";
                     bookButton.innerHTML = `
@@ -234,6 +306,12 @@
                         loadChapters(doc.id, book.title);
                     };
                     bookList.appendChild(bookButton);
+
+                    // 2. Populate admin dropdown
+                    const bookOption = document.createElement('option');
+                    bookOption.value = doc.id;
+                    bookOption.textContent = book.title;
+                    adminBookSelect.appendChild(bookOption);
                 });
             } catch (error) {
                 console.error("Error loading books:", error);
@@ -472,7 +550,196 @@
             `;
         }
 
-        // --- 6. DATABASE SEEDER (RUN ONCE) ---
+        // --- 6. ADMIN PANEL LOGIC ---
+
+        // 6a. Create New Book
+        createBookForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const title = bookTitleInput.value.trim();
+            const author = bookAuthorInput.value.trim();
+
+            if (!title || !author) {
+                createBookMessage.textContent = "Please fill out both title and author.";
+                createBookMessage.className = "text-sm text-red-600";
+                return;
+            }
+
+            try {
+                const bookCollectionRef = collection(db, `artifacts/${appId}/public/data/books`);
+                await addDoc(bookCollectionRef, { title, author });
+
+                createBookMessage.textContent = "Successfully added book!";
+                createBookMessage.className = "text-sm text-green-600";
+                bookTitleInput.value = '';
+                bookAuthorInput.value = '';
+                await loadBooks(); // Refresh book lists
+            } catch (error) {
+                console.error("Error adding book:", error);
+                createBookMessage.textContent = "Error adding book. See console.";
+                createBookMessage.className = "text-sm text-red-600";
+            }
+        };
+
+        // 6b. Create New Quiz (Modal and Form Logic)
+        
+        // Show/hide question types
+        questionTypeSelect.onchange = () => {
+            if (questionTypeSelect.value === 'mcq') {
+                mcqOptionsContainer.classList.remove('hidden');
+                shortAnswerContainer.classList.add('hidden');
+            } else {
+                mcqOptionsContainer.classList.add('hidden');
+                shortAnswerContainer.classList.remove('hidden');
+            }
+        };
+
+        // Add a new option input field for MCQs
+        addOptionButton.onclick = () => {
+            const optionIndex = mcqOptionInputs.children.length;
+            const newOptionInput = document.createElement('input');
+            newOptionInput.type = "text";
+            newOptionInput.placeholder = `Option ${optionIndex + 1}`;
+            newOptionInput.className = "w-full p-2 border border-slate-300 rounded-md";
+            mcqOptionInputs.appendChild(newOptionInput);
+            
+            // Add to the "correct answer" dropdown
+            const newCorrectOption = document.createElement('option');
+            newCorrectOption.value = optionIndex;
+            newCorrectOption.textContent = `Option ${optionIndex + 1}`;
+            mcqCorrectAnswerSelect.appendChild(newCorrectOption);
+        };
+
+        // Show the "Add Question" modal
+        addQuestionButton.onclick = () => {
+            resetQuestionModal();
+            newQuestionModal.classList.remove('hidden');
+        };
+
+        // Hide the "Add Question" modal
+        cancelQuestionButton.onclick = () => {
+            newQuestionModal.classList.add('hidden');
+        };
+
+        // Reset the question modal to its default state
+        function resetQuestionModal() {
+            questionTextInput.value = '';
+            questionTypeSelect.value = 'mcq';
+            shortAnswerInput.value = '';
+            mcqOptionInputs.innerHTML = '';
+            mcqCorrectAnswerSelect.innerHTML = '';
+            
+            // Add 2 default options
+            addOptionButton.click();
+            addOptionButton.click();
+            
+            mcqOptionsContainer.classList.remove('hidden');
+            shortAnswerContainer.classList.add('hidden');
+        }
+
+        // Save the question from the modal to the temporary array
+        saveQuestionButton.onclick = () => {
+            const text = questionTextInput.value.trim();
+            const type = questionTypeSelect.value;
+            if (!text) {
+                alert("Please enter question text.");
+                return;
+            }
+
+            let questionData = {
+                order: newQuizQuestions.length + 1,
+                text,
+                type
+            };
+
+            if (type === 'mcq') {
+                const options = [];
+                const optionInputs = mcqOptionInputs.querySelectorAll('input');
+                optionInputs.forEach(input => {
+                    if (input.value.trim()) {
+                        options.push(input.value.trim());
+                    }
+                });
+                if (options.length < 2) {
+                    alert("Please add at least 2 options.");
+                    return;
+                }
+                questionData.options = options;
+                questionData.correctAnswer = mcqCorrectAnswerSelect.value;
+            } else {
+                const answer = shortAnswerInput.value.trim();
+                if (!answer) {
+                    alert("Please provide a model answer.");
+                    return;
+                }
+                questionData.correctAnswer = answer;
+            }
+
+            // Add to temporary array
+            newQuizQuestions.push(questionData);
+            
+            // Update the UI list
+            const questionItem = document.createElement('li');
+            questionItem.className = "text-sm text-slate-700";
+            questionItem.textContent = `${questionData.order}. ${questionData.text}`;
+            adminQuestionList.appendChild(questionItem);
+            
+            newQuestionModal.classList.add('hidden');
+        };
+
+        // 6c. Save the whole chapter (with questions) to Firestore
+        saveChapterButton.onclick = async () => {
+            const bookId = adminBookSelect.value;
+            const chapterTitle = adminChapterTitle.value.trim();
+
+            if (!bookId || !chapterTitle || newQuizQuestions.length === 0) {
+                createChapterMessage.textContent = "Please select a book, enter a chapter title, and add at least one question.";
+                createChapterMessage.className = "text-sm text-red-600";
+                return;
+            }
+
+            saveChapterButton.disabled = true;
+            createChapterMessage.textContent = "Saving chapter...";
+            createChapterMessage.className = "text-sm text-blue-600";
+            
+            try {
+                const batch = writeBatch(db);
+                
+                // 1. Create the new chapter document
+                const chapterRef = doc(collection(db, `artifacts/${appId}/public/data/books/${bookId}/chapters`));
+                batch.set(chapterRef, { title: chapterTitle });
+                
+                // 2. Add all questions from the temporary array to its subcollection
+                for (const question of newQuizQuestions) {
+                    const questionRef = doc(collection(db, chapterRef.path, "questions"));
+                    batch.set(questionRef, question);
+                }
+                
+                // 3. Commit the batch
+                await batch.commit();
+
+                createChapterMessage.textContent = "Successfully saved new chapter!";
+                createChapterMessage.className = "text-sm text-green-600";
+                
+                // Reset the form
+                adminBookSelect.value = '';
+                adminChapterTitle.value = '';
+                adminQuestionList.innerHTML = '';
+                newQuizQuestions = [];
+                saveChapterButton.disabled = false;
+                
+                // Reload books in case the user's new chapter was for a new book
+                // (This is redundant if they just added to an existing book, but safe)
+                await loadBooks();
+                
+            } catch (error) {
+                console.error("Error saving chapter:", error);
+                createChapterMessage.textContent = "Error saving chapter. See console.";
+                createChapterMessage.className = "text-sm text-red-600";
+                saveChapterButton.disabled = false;
+            }
+        };
+
+        // --- 7. DATABASE SEEDER (RUN ONCE) ---
         seedButton.onclick = async () => {
             seedButton.disabled = true;
             seedLoading.classList.remove('hidden');
@@ -535,7 +802,6 @@
         /**
          * Contains all quiz data for Shiloh.
          * This is a helper function just for seeding.
-         * * !! FIXED all known syntax errors and typos in this data block. !!
          */
         function getShilohSeedData() {
             return [
@@ -661,18 +927,131 @@
         <!-- Main App Content (Hidden by default) -->
         <div id="app-container" class="hidden">
 
-            <!-- Seeder Button (Show first) -->
-            <div id="seeder-container" class="p-6 border-b border-slate-200 bg-yellow-50">
-                <h2 class="font-semibold text-lg text-yellow-800">One-Time Database Setup</h2>
-                <p class="text-sm text-yellow-700 mt-1">This app needs quiz data. Click the button to add the "Shiloh" quizzes to the database.</p>
-                <button id="seed-button" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-slate-400">
-                    Seed Database with "Shiloh"
-                </button>
-                <div id="seed-loading" class="hidden flex items-center mt-4">
-                    <div class="spinner !w-5 !h-5 !border-2 !border-t-blue-500"></div>
-                    <span class="ml-2 text-sm text-slate-600">Seeding...</span>
+            <!-- === NEW: Admin Panel (Hidden by default, shown by JS) === -->
+            <div id="admin-panel-container" class="hidden p-6 border-b border-slate-200 bg-slate-50">
+                <details>
+                    <summary class="text-xl font-semibold text-slate-700">
+                        Manage Quizzes (Admin)
+                    </summary>
+
+                    <div class="mt-6 pl-6 border-l-4 border-slate-300 space-y-8">
+
+                        <!-- 1. Seeder (Moved inside) -->
+                        <div id="seeder-container" class="p-4 border border-slate-200 rounded-lg bg-yellow-50">
+                            <h3 class="font-semibold text-lg text-yellow-800">Quickstart: Seed "Shiloh"</h3>
+                            <p class="text-sm text-yellow-700 mt-1">If the database is empty, click this to add the "Shiloh" quiz.</p>
+                            <button id="seed-button" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-slate-400">
+                                Seed Database with "Shiloh"
+                            </button>
+                            <div id="seed-loading" class="hidden flex items-center mt-4">
+                                <div class="spinner !w-5 !h-5 !border-2 !border-t-blue-500"></div>
+                                <span class="ml-2 text-sm text-slate-600">Seeding...</span>
+                            </div>
+                            <p id="seed-message" class="text-sm font-medium text-green-700 mt-2"></p>
+                        </div>
+                        
+                        <!-- 2. Create New Book -->
+                        <div class="p-4 border border-slate-200 rounded-lg bg-white">
+                            <h3 class="font-semibold text-lg text-slate-800">Add a New Book</h3>
+                            <form id="create-book-form" class="mt-4 space-y-3">
+                                <div>
+                                    <label for="book-title-input" class="block text-sm font-medium text-slate-700">Book Title</label>
+                                    <input type="text" id="book-title-input" class="mt-1 w-full p-2 border border-slate-300 rounded-md" required>
+                                </div>
+                                <div>
+                                    <label for="book-author-input" class="block text-sm font-medium text-slate-700">Author</label>
+                                    <input type="text" id="book-author-input" class="mt-1 w-full p-2 border border-slate-300 rounded-md" required>
+                                </div>
+                                <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Save Book</button>
+                                <p id="create-book-message" class="text-sm mt-2"></p>
+                            </form>
+                        </div>
+                        
+                        <!-- 3. Create New Chapter/Quiz -->
+                        <div class="p-4 border border-slate-200 rounded-lg bg-white">
+                            <h3 class="font-semibold text-lg text-slate-800">Add a New Chapter Quiz</h3>
+                            <div id="create-quiz-form" class="mt-4 space-y-4">
+                                <div>
+                                    <label for="admin-book-select" class="block text-sm font-medium text-slate-700">1. Select Book</label>
+                                    <select id="admin-book-select" class="mt-1 w-full p-2 border border-slate-300 rounded-md" required>
+                                        <option value="">Select a book...</option>
+                                        <!-- Options added by loadBooks() -->
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="admin-chapter-title" class="block text-sm font-medium text-slate-700">2. Enter Chapter Title</label>
+                                    <input type="text" id="admin-chapter-title" class="mt-1 w-full p-2 border border-slate-300 rounded-md" placeholder="e.g., Chapter 1" required>
+                                </div>
+                                
+                                <div>
+                                    <p class="block text-sm font-medium text-slate-700">3. Add Questions</p>
+                                    <ul id="admin-question-list" class="mt-2 space-y-1 list-disc list-inside bg-slate-50 p-3 rounded-md min-h-[50px]">
+                                        <!-- New questions will be listed here -->
+                                    </ul>
+                                    <button id="add-question-button" type="button" class="mt-2 px-4 py-2 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600">
+                                        + Add Question
+                                    </button>
+                                </div>
+                                
+                                <hr class="my-4">
+
+                                <button id="save-chapter-button" type="button" class="w-full px-5 py-3 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 disabled:bg-slate-400">
+                                    4. Save New Chapter to Database
+                                </button>
+                                <p id="create-chapter-message" class="text-sm mt-2"></p>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+            </div>
+
+            <!-- "Add Question" Modal (hidden by default) -->
+            <div id="new-question-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg space-y-4">
+                    <h3 class="text-lg font-semibold">Add New Question</h3>
+                    
+                    <div>
+                        <label for="question-text-input" class="block text-sm font-medium text-slate-700">Question Text</label>
+                        <textarea id="question-text-input" rows="3" class="mt-1 w-full p-2 border border-slate-300 rounded-md"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label for="question-type-select" class="block text-sm font-medium text-slate-700">Question Type</label>
+                        <select id="question-type-select" class="mt-1 w-full p-2 border border-slate-300 rounded-md">
+                            <option value="mcq">Multiple Choice</option>
+                            <option value="short_answer">Short Answer</option>
+                        </select>
+                    </div>
+
+                    <!-- MCQ Options -->
+                    <div id="mcq-options-container" class="space-y-3">
+                        <label class="block text-sm font-medium text-slate-700">Options</label>
+                        <div id="mcq-option-inputs" class="space-y-2">
+                            <!-- JS will add inputs here -->
+                        </div>
+                        <button id="add-option-button" type="button" class="text-sm text-blue-600 hover:text-blue-800">+ Add another option</button>
+                        
+                        <div>
+                            <label for="mcq-correct-answer-select" class="block text-sm font-medium text-slate-700">Correct Answer</label>
+                            <select id="mcq-correct-answer-select" class="mt-1 w-full p-2 border border-slate-300 rounded-md">
+                                <!-- JS will add options here -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Short Answer Options -->
+                    <div id="short-answer-container" class="hidden space-y-3">
+                        <label for="short-answer-input" class="block text-sm font-medium text-slate-700">Model Answer</label>
+                        <textarea id="short-answer-input" rows="2" class="mt-1 w-full p-2 border border-slate-300 rounded-md" placeholder="Type the suggested answer..."></textarea>
+                    </div>
+                    
+                    <!-- Modal Controls -->
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button id="cancel-question-button" type="button" class="px-4 py-2 bg-slate-200 text-slate-800 rounded-md hover:bg-slate-300">Cancel</button>
+                        <button id="save-question-button" type="button" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Save Question</button>
+                    </div>
                 </div>
-                <p id="seed-message" class="text-sm font-medium text-green-700 mt-2"></p>
             </div>
 
             <!-- Book Selection -->
