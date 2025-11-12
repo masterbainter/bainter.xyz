@@ -119,15 +119,14 @@
         // --- 1. FIREBASE INITIALIZATION ---
         async function initFirebase() {
             try {
+                
                 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                // !! IMPORTANT: PASTE YOUR FIREBASE CONFIG HERE !!
+                // !!    YOUR FIREBASE CONFIG IS NOW HERE      !!
                 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                // You can get this from your Firebase project console:
-                // Project Settings > General > Your apps > Web app
                 const firebaseConfig = {
                     apiKey: "AIzaSyBqBn-aP35BlJY1FeLgfaf6I8cyMRzxKhU",
                     authDomain: "bainter-book-quizzes.firebaseapp.com",
-                    projectId: "bainter-book-quizzes", // <-- You provided this!
+                    projectId: "bainter-book-quizzes",
                     storageBucket: "bainter-book-quizzes.firebasestorage.app",
                     messagingSenderId: "1029138348029",
                     appId: "1:1029138348029:web:77bc8b96f0a86bbfd38b94"
@@ -135,13 +134,7 @@
                 
                 // --- This is the new App ID ---
                 appId = firebaseConfig.projectId; // Use your project ID as the app ID
-
-                if (firebaseConfig.apiKey === "AIzaSyBqBn-aP35BlJY1FeLgfaf6I8cyMRzxKhU") {
-                    authStatus.textContent = "Error: Please paste your Firebase config into quiz_app.html.";
-                    mainLoading.classList.add('hidden');
-                    return;
-                }
-
+                
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
@@ -542,6 +535,7 @@
         /**
          * Contains all quiz data for Shiloh.
          * This is a helper function just for seeding.
+         * * !! FIXED all known syntax errors and typos in this data block. !!
          */
         function getShilohSeedData() {
             return [
@@ -561,7 +555,7 @@
                     { order: 1, type: 'mcq', text: "What is Marty's biggest problem with hiding Shiloh?", options: ['Shiloh keeps barking', 'He needs to get food for him', 'Shiloh keeps escaping'], correctAnswer: '1' },
                     { order: 2, type: 'mcq', text: 'How does Marty get food for Shiloh?', options: ['He buys dog food at the store', 'He asks his friend David for help', 'He saves part of his own supper'], correctAnswer: '2' },
                     { order: 3, type: 'mcq', text: 'Who almost catches Marty with the food?', options: ['His mother (Ma)', 'His sister, Dara Lynn', 'Judd Travers'], correctAnswer: '0' },
-                    { order: 4, type: 'short_answer', text: 'What. does Marty feel bad about in this chapter?', correctAnswer: 'He feels guilty and bad about lying to his parents.' }
+                    { order: 4, type: 'short_answer', text: 'What does Marty feel bad about in this chapter?', correctAnswer: 'He feels guilty and bad about lying to his parents.' }
                 ]},
                 { title: 'Chapter 4', questions: [
                     { order: 1, type: 'mcq', text: 'Who is the first family member to find out about Shiloh?', options: ['His sister Dara Lynn', 'His mother (Ma)', 'His father (Dad)'], correctAnswer: '2' },
@@ -582,7 +576,7 @@
                 { title: 'Chapter 7', questions: [
                     { order: 1, type: 'mcq', text: "Who sees Marty visiting Shiloh at Doc Murphy's?", options: ['Judd Travers', 'David Howard', 'His dad'], correctAnswer: '0' },
                     { order: 2, type: 'mcq', text: "Now that the secret is out, what does Marty's dad say will happen?", options: ['They can keep Shiloh', "Shiloh must go back to Judd when he's better", 'They will give Shiloh to David Howard'], correctAnswer: '1' },
-                    { order: 3, type: 'mcq', text: 'What "job" does Marty get to help pay for Shiloh\'s vet bill?', options: ['Mowing lawns', 'Delivering newspapers', 'Collecting cans and bottles to recycle'], correctAnswer: '2' }
+                    { order: 3, type: 'mcq', text: "What 'job' does Marty get to help pay for Shiloh's vet bill?", options: ['Mowing lawns', 'Delivering newspapers', 'Collecting cans and bottles to recycle'], correctAnswer: '2' }
                 ]},
                 { title: 'Chapter 8', questions: [
                     { order: 1, type: 'mcq', text: "Where does Shiloh get to stay once he's better?", options: ["At Doc Murphy's", 'Back with Judd', "At Marty's house, in a box inside"], correctAnswer: '2' },
@@ -621,9 +615,9 @@
                 ]},
                 { title: 'Chapter 15', questions: [
                     { order: 1, type: 'mcq', text: 'Who is the first person Marty tells the whole truth to (about the deer)?', options: ['His dad', 'His mom', 'David Howard'], correctAnswer: '0' },
-                    { order: 2, type: 'mcq', text: 'How does Marty's dad react to the news about the deer?', options: ['He is very angry at Marty', 'He makes Marty tell the game warden', 'He is quiet, but understands and is proud'], correctAnswer: '2' },
+                    { order: 2, type: 'mcq', text: "How does Marty's dad react to the news about the deer?", options: ['He is very angry at Marty', 'He makes Marty tell the game warden', 'He is quiet, but understands and is proud'], correctAnswer: '2' },
                     { order: 3, type: 'mcq', text: "What does Marty's dad buy at the end of the book?", options: ['A new dog house', 'A new dog collar', 'A bag of dog treats'], correctAnswer: '1' }
-                ]},
+                ]}
             ];
         }
 
@@ -659,7 +653,7 @@
             <h2 class="text-2xl font-semibold text-slate-800">Welcome!</h2>
             <p class="text-slate-600 mt-2">Please sign in to continue.</p>
             <button id="login-button" class="mt-6 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg shadow-md hover:bg-blue-600 flex items-center">
-                <svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><defs><path id="a" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/></defs><clipPath id="b"><use xlink:href="#a" overflow="visible"/></clipPath><path clip-path="url(#b)" fill="#FBBC05" d="M0 37V11l17 13z"/><path clip-path="url(#b)" fill="#EA4335" d="M0 11l17 13 7-6.1L48 14V0H0z"/><path clip-path="url(#b)" fill="#34A853" d="M0 37l30-23 7.9 1L48 0v48H0z"/><path clip-path="url(#b)" fill="#4285F4" d="M48 48L17 24l-4-3 35-10z"/></svg>
+                <svg classM="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><defs><path id="a" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 4.1 29.6 2 24 2 11.8 2 2 11.8 2 24s9.8 22 22 22c11 0 21-8 21-22 0-1.3-.2-2.7-.5-4z"/></defs><clipPath id="b"><use xlink:href="#a" overflow="visible"/></clipPath><path clip-path="url(#b)" fill="#FBBC05" d="M0 37V11l17 13z"/><path clip-path="url(#b)" fill="#EA4335" d="M0 11l17 13 7-6.1L48 14V0H0z"/><path clip-path="url(#b)" fill="#34A853" d="M0 37l30-23 7.9 1L48 0v48H0z"/><path clip-path="url(#b)" fill="#4285F4" d="M48 48L17 24l-4-3 35-10z"/></svg>
                 Sign in with Google
             </button>
         </div>
@@ -671,7 +665,7 @@
             <div id="seeder-container" class="p-6 border-b border-slate-200 bg-yellow-50">
                 <h2 class="font-semibold text-lg text-yellow-800">One-Time Database Setup</h2>
                 <p class="text-sm text-yellow-700 mt-1">This app needs quiz data. Click the button to add the "Shiloh" quizzes to the database.</p>
-                <button id="seed-button" class"mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-slate-400">
+                <button id="seed-button" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-slate-400">
                     Seed Database with "Shiloh"
                 </button>
                 <div id="seed-loading" class="hidden flex items-center mt-4">
