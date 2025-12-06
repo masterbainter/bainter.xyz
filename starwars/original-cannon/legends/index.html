@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="The ultimate reference guide to the Star Wars Legends Expanded Universe. Timelines, characters, and lore.">
+    <title>Star Wars Legends Archive | The Expanded Universe</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --color-bg: #050505;
+            --color-primary: #FFE81F; /* Star Wars Yellow */
+            --color-secondary: #2E67F8; /* Jedi/Republic Blue */
+            --color-danger: #EB212E; /* Sith Red */
+            --color-text: #E0E0E0;
+            --color-panel: rgba(20, 24, 35, 0.85);
+            --color-panel-border: #444;
+            --font-heading: 'Orbitron', sans-serif;
+            --font-subheading: 'Rajdhani', sans-serif;
+            --font-body: 'Roboto', sans-serif;
+            --glow-primary: 0 0 10px rgba(255, 232, 31, 0.5);
+            --glow-blue: 0 0 10px rgba(46, 103, 248, 0.6);
+            --glow-red: 0 0 10px rgba(235, 33, 46, 0.6);
+        }
+
+        /* --- Global Reset & Basics --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: var(--color-bg);
+            color: var(--color-text);
+            font-family: var(--font-body);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Starfield Canvas Background */
+        #starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        a { text-decoration: none; color: inherit; transition: 0.3s; }
+        ul { list-style: none; }
+
+        h1, h2, h3 {
+            font-family: var(--font-heading);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* --- Navigation --- */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            border-bottom: 1px solid #333;
+            padding: 1rem 2rem;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--color-primary);
+            text-shadow: var(--glow-primary);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            font-family: var(--font-subheading);
+            font-weight: 700;
+            font-size: 1.1rem;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: var(--color-primary);
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -5px;
+            left: 0;
+            background-color: var(--color-primary);
+            transition: width 0.3s;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .menu-toggle {
+            display: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* --- Hero Section --- */
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: var(--color-primary);
+            text-shadow: 0 0 20px rgba(255, 232, 31, 0.3);
+            animation: fadeInScale 2s ease-out;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            max-width: 800px;
+            margin-bottom: 2rem;
+            font-family: var(--font-subheading);
+            color: #aaa;
+        }
+
+        .cta-button {
+            padding: 1rem 2.5rem;
+            background: transparent;
+            border: 2px solid var(--color-primary);
+            color: var(--color-primary);
+            font-family: var(--font-heading);
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 4px;
+            text-shadow: var(--glow-primary);
+            box-shadow: var(--glow-primary);
+            transition: 0.3s all;
+        }
+
+        .cta-button:hover {
+            background: var(--color-primary);
+            color: #000;
+            box-shadow: 0 0 20px var(--color-primary);
+        }
+
+        /* --- Section Styling --- */
+        section {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #fff;
+            position: relative;
+            display: inline-block;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 60%;
+            height: 3px;
+            background: var(--color-danger);
+            margin: 10px auto 0;
+            box-shadow: var(--glow-red);
+        }
+
+        /* --- Timeline Section --- */
+        .timeline-container {
+            position: relative;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .timeline-container::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            background-color: #333;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            margin-left: -2px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+
+        .timeline-item {
+            padding: 10px 40px;
+            position: relative;
+            background-color: inherit;
+            width: 50%;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.6s ease-in-out;
+        }
+
+        .timeline-item.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .timeline-item.left { left: 0; text-align: right; }
+        .timeline-item.right { left: 50%; }
+
+        .timeline-content {
+            padding: 20px 30px;
+            background: var(--color-panel);
+            border: 1px solid var(--color-panel-border);
+            border-radius: 6px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Era specific borders */
+        .era-old-republic { border-left: 4px solid var(--color-primary); }
+        .era-empire { border-left: 4px solid var(--color-danger); }
+        .era-new-republic { border-left: 4px solid var(--color-secondary); }
+        .era-legacy { border-left: 4px solid #fff; }
+
+        .timeline-date {
+            font-family: var(--font-subheading);
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .timeline-circle {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            right: -10px;
+            background-color: var(--color-bg);
+            border: 4px solid var(--color-primary);
+            top: 20px;
+            border-radius: 50%;
+            z-index: 11;
+        }
+
+        .right .timeline-circle { left: -10px; }
+
+        /* --- Characters Section --- */
+        .search-container {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            padding: 0.8rem;
+            width: 300px;
+            background: #111;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 4px;
+            font-family: var(--font-body);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--color-secondary);
+            box-shadow: var(--glow-blue);
+        }
+
+        .filter-btn {
+            padding: 0.8rem 1.5rem;
+            background: #222;
+            border: 1px solid #444;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: var(--font-subheading);
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--color-secondary);
+            border-color: var(--color-secondary);
+            box-shadow: var(--glow-blue);
+        }
+
+        .character-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .char-card {
+            background: var(--color-panel);
+            border: 1px solid var(--color-panel-border);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+        }
+
+        .char-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            border-color: var(--color-text);
+        }
+
+        .char-img {
+            width: 100%;
+            height: 200px;
+            background-color: #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Holo-scanline effect on images */
+        .char-img::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.1),
+                rgba(0, 0, 0, 0.1) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+        }
+
+        .char-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+
+        .char-card:hover .char-img img {
+            transform: scale(1.05);
+        }
+
+        .char-info {
+            padding: 1.5rem;
+        }
+
+        .char-name {
+            color: var(--color-primary);
+            font-size: 1.4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .char-aff {
+            font-size: 0.9rem;
+            color: #888;
+            font-family: var(--font-subheading);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .char-bio {
+            font-size: 0.95rem;
+            color: #ddd;
+            margin-bottom: 1rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-right: 5px;
+            font-weight: bold;
+        }
+
+        .badge-jedi { background: rgba(46, 103, 248, 0.2); color: #8cb1ff; border: 1px solid var(--color-secondary); }
+        .badge-sith { background: rgba(235, 33, 46, 0.2); color: #ff8c8c; border: 1px solid var(--color-danger); }
+        .badge-imp { background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid #666; }
+
+        /* --- Canon vs Legends --- */
+        .lore-container {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .lore-card {
+            flex: 1;
+            min-width: 300px;
+            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
+            padding: 2rem;
+            border-radius: 10px;
+            border-top: 3px solid #333;
+        }
+
+        .lore-card.legends { border-top-color: var(--color-primary); }
+        .lore-card.canon { border-top-color: #fff; }
+        .lore-card.fanon { border-top-color: var(--color-secondary); }
+
+        .lore-card h3 {
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .lore-list li {
+            margin-bottom: 0.8rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .lore-list li::before {
+            content: '\f005'; /* FontAwesome Star */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: #555;
+            font-size: 0.8rem;
+            top: 4px;
+        }
+
+        .legends .lore-list li::before { color: var(--color-primary); }
+
+        /* --- FAQ Accordion --- */
+        .faq-item {
+            margin-top: 1rem;
+            border: 1px solid #333;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            width: 100%;
+            background: #111;
+            padding: 1rem;
+            text-align: left;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .faq-question::after {
+            content: '+';
+            font-size: 1.2rem;
+        }
+
+        .faq-question.active::after {
+            content: '-';
+        }
+
+        .faq-answer {
+            padding: 0 1rem;
+            max-height: 0;
+            overflow: hidden;
+            background: #1a1a1a;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .faq-answer p {
+            padding: 1rem 0;
+        }
+
+        /* --- Gallery --- */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .gallery-item {
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+            border-radius: 4px;
+            aspect-ratio: 16/9;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.4s;
+        }
+
+        .gallery-item:hover img {
+            transform: scale(1.1);
+        }
+
+        .gallery-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: 0.3s;
+        }
+
+        .gallery-item:hover .gallery-overlay {
+            opacity: 1;
+        }
+
+        /* --- Footer --- */
+        footer {
+            background: #000;
+            border-top: 1px solid #333;
+            padding: 3rem 2rem;
+            margin-top: 4rem;
+            text-align: center;
+        }
+
+        .footer-socials {
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-socials a {
+            color: #888;
+            font-size: 1.5rem;
+            margin: 0 10px;
+        }
+
+        .footer-socials a:hover {
+            color: var(--color-primary);
+        }
+
+        .disclaimer {
+            font-size: 0.8rem;
+            color: #555;
+            margin-top: 1rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--color-primary);
+            color: #000;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: 0.3s;
+            z-index: 90;
+        }
+
+        .back-to-top.show {
+            opacity: 1;
+        }
+
+        /* --- Animations --- */
+        @keyframes fadeInScale {
+            0% { opacity: 0; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            
+            .timeline-container::after { left: 31px; }
+            .timeline-item { width: 100%; padding-left: 70px; padding-right: 25px; }
+            .timeline-item.left, .timeline-item.right { left: 0; text-align: left; }
+            .timeline-circle, .right .timeline-circle { left: 21px; }
+            
+            .nav-links {
+                position: absolute;
+                top: 70px;
+                right: 0;
+                height: calc(100vh - 70px);
+                background: #000;
+                flex-direction: column;
+                width: 100%;
+                align-items: center;
+                padding-top: 2rem;
+                transform: translateX(100%);
+                transition: transform 0.3s ease-in-out;
+            }
+
+            .nav-links.active { transform: translateX(0); }
+            
+            .menu-toggle { display: block; color: #fff; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Dynamic Starfield Background -->
+    <canvas id="starfield"></canvas>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="logo">LEGENDS <span style="color: #fff">ARCHIVE</span></div>
+        <div class="menu-toggle" id="mobile-menu">
+            <i class="fas fa-bars"></i>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#hero">Home</a></li>
+            <li><a href="#timeline">Timeline</a></li>
+            <li><a href="#characters">Database</a></li>
+            <li><a href="#lore">Canon vs Legends</a></li>
+            <li><a href="#gallery">Gallery</a></li>
+            <li><a href="#" onclick="focusSearch()"><i class="fas fa-search"></i></a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <header id="hero" class="hero">
+        <h1>Star Wars Legends</h1>
+        <p>Before the Dark Times. Before the Canon Reset. Explore the vast history of the Expanded Universe.</p>
+        <button class="cta-button" onclick="document.getElementById('timeline').scrollIntoView()">Explore the History</button>
+    </header>
+
+    <!-- Timeline Section -->
+    <section id="timeline">
+        <h2 class="section-title">Galactic Timeline</h2>
+        
+        <div class="timeline-container">
+            <!-- Item 1 -->
+            <div class="timeline-item left">
+                <div class="timeline-circle"></div>
+                <div class="timeline-content era-old-republic">
+                    <span class="timeline-date">25,793 BBY - 1,000 BBY</span>
+                    <h3>The Old Republic Era</h3>
+                    <p>The dawn of the Jedi Order and the ancient wars against the Sith Empire. Notable events include the Mandalorian Wars, the fall of Revan, and the implementation of the Rule of Two by Darth Bane.</p>
+                </div>
+            </div>
+
+            <!-- Item 2 -->
+            <div class="timeline-item right">
+                <div class="timeline-circle"></div>
+                <div class="timeline-content era-empire">
+                    <span class="timeline-date">19 BBY - 4 ABY</span>
+                    <h3>Rise of the Empire</h3>
+                    <p>Following Order 66, the Galaxy falls into darkness under Emperor Palpatine. Key events include the Great Jedi Purge, the construction of the Death Star, and the formation of the Rebel Alliance.</p>
+                </div>
+            </div>
+
+            <!-- Item 3 -->
+            <div class="timeline-item left">
+                <div class="timeline-circle"></div>
+                <div class="timeline-content era-new-republic">
+                    <span class="timeline-date">5 ABY - 25 ABY</span>
+                    <h3>The New Republic</h3>
+                    <p>Post-Endor struggles. Grand Admiral Thrawn attempts to crush the fledgling Republic. Luke Skywalker establishes the New Jedi Order on Yavin 4. The Emperor returns in a clone body (Dark Empire).</p>
+                </div>
+            </div>
+
+            <!-- Item 4 -->
+            <div class="timeline-item right">
+                <div class="timeline-circle"></div>
+                <div class="timeline-content era-new-republic">
+                    <span class="timeline-date">25 ABY - 29 ABY</span>
+                    <h3>The Yuuzhan Vong War</h3>
+                    <p>Extra-galactic invaders immune to the Force devastate the galaxy. Chewbacca dies saving Anakin Solo. The galaxy unites in a desperate bid for survival, changing the Jedi forever.</p>
+                </div>
+            </div>
+
+             <!-- Item 5 -->
+             <div class="timeline-item left">
+                <div class="timeline-circle"></div>
+                <div class="timeline-content era-legacy">
+                    <span class="timeline-date">130 ABY+</span>
+                    <h3>Legacy Era</h3>
+                    <p>Generations later, the One Sith rise under Darth Krayt. Cade Skywalker, a bounty hunter and drug addict, struggles with his heritage as the last Skywalker.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Character Database -->
+    <section id="characters">
+        <h2 class="section-title">Character Database</h2>
+        
+        <div class="search-container">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search Archives..." onkeyup="filterCharacters()">
+            <button class="filter-btn active" onclick="filterGroup('all')">All</button>
+            <button class="filter-btn" onclick="filterGroup('jedi')">Jedi / Republic</button>
+            <button class="filter-btn" onclick="filterGroup('sith')">Sith / Empire</button>
+            <button class="filter-btn" onclick="filterGroup('other')">Scoundrels / Other</button>
+        </div>
+
+        <div class="character-grid" id="charGrid">
+            <!-- Card 1 -->
+            <div class="char-card" data-category="jedi">
+                <div class="char-img">
+                    <img src="https://placehold.co/400x300/000000/2E67F8?text=Luke+Skywalker" alt="Luke Skywalker">
+                </div>
+                <div class="char-info">
+                    <h3 class="char-name">Luke Skywalker</h3>
+                    <span class="char-aff">Grand Master of the NJO</span>
+                    <p class="char-bio">Legendary hero who redeemed Anakin Skywalker. In Legends, he rebuilt the Jedi Order, married Mara Jade, and faced the Vong and the Lost Tribe of the Sith.</p>
+                    <span class="badge badge-jedi">Jedi</span>
+                    <span class="badge badge-imp">New Republic</span>
+                </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="char-card" data-category="sith">
+                <div class="char-img">
+                    <img src="https://placehold.co/400x300/000000/EB212E?text=Darth+Revan" alt="Revan">
+                </div>
+                <div class="char-info">
+                    <h3 class="char-name">Revan</h3>
+                    <span class="char-aff">Sith Lord / Jedi Knight</span>
+                    <p class="char-bio">A complex figure who fought in the Mandalorian Wars, fell to the dark side, and was redeemed. Known as the Prodigal Knight.</p>
+                    <span class="badge badge-sith">Sith</span>
+                    <span class="badge badge-jedi">Jedi</span>
+                </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="char-card" data-category="sith">
+                <div class="char-img">
+                    <img src="https://placehold.co/400x300/000000/003399?text=Grand+Admiral+Thrawn" alt="Thrawn">
+                </div>
+                <div class="char-info">
+                    <h3 class="char-name">Mitth'raw'nuruodo</h3>
+                    <span class="char-aff">Grand Admiral of the Empire</span>
+                    <p class="char-bio">A Chiss tactical genius who almost dismantled the New Republic five years after Endor using art and strategy rather than the Force.</p>
+                    <span class="badge badge-sith">Empire</span>
+                </div>
+            </div>
+
+            <!-- Card 4 -->
+            <div class="char-card" data-category="jedi">
+                <div class="char-img">
+                    <img src="https://placehold.co/400x300/000000/purple?text=Mara+Jade" alt="Mara Jade">
+                </div>
+                <div class="char-info">
+                    <h3 class="char-name">Mara Jade Skywalker</h3>
+                    <span class="char-aff">Emperor's Hand / Jedi Master</span>
+                    <p class="char-bio">Former assassin for Palpatine. She broke his mental hold, married Luke Skywalker, and became a dedicated Jedi Master and mother to Ben Skywalker.</p>
+                    <span class="badge badge-jedi">Jedi</span>
+                    <span class="badge badge-imp">Smuggler</span>
+                </div>
+            </div>
+
+            <!-- Card 5 -->
+            <div class="char-card" data-category="sith">
+                <div class="char-img">
+                    <img src="https://placehold.co/400x300/000000/darkred?text=Darth+Bane" alt="Darth Bane">
+                </div>
+                <div class="char-info">
+                    <h3 class="char-name">Darth Bane</h3>
+                    <span class="char-aff">Creator of the Rule of Two</span>
+                    <p class="char-bio">Realizing the infighting of the Brotherhood of Darkness was weakness, he destroyed the order and established that there should only be two Sith: Master and Apprentice.</p>
+                    <span class="badge badge-sith">Sith</span>
+                </div>
+            </div>
+
+            <!-- Card 6 -->
+            <div class="char-card" data-category="other">
+                <div class="char-img">
+                    <img src="https://placehold.co/400x300/000000/brown?text=Boba+Fett" alt="Boba Fett">
+                </div>
+                <div class="char-info">
+                    <h3 class="char-name">Boba Fett</h3>
+                    <span class="char-aff">Mandalore</span>
+                    <p class="char-bio">Escaped the Sarlacc in Legends. He eventually returned to his roots, becoming Mandalore and leading his people against the Yuuzhan Vong.</p>
+                    <span class="badge badge-imp">Mandalorian</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Lore Section -->
+    <section id="lore">
+        <h2 class="section-title">Canon vs. Legends</h2>
+        <div class="lore-container">
+            <div class="lore-card legends">
+                <h3><i class="fas fa-book-open"></i> Legends (The EU)</h3>
+                <p>Formerly the "Expanded Universe," this encompasses all licensed novels, comics, and games released before April 2014 (excluding The Clone Wars).</p>
+                <br>
+                <ul class="lore-list">
+                    <li>Han & Leia have three children: Jaina, Jacen, and Anakin.</li>
+                    <li>Luke Skywalker rebuilds a successful Jedi Order.</li>
+                    <li>The Empire continues as the "Imperial Remnant" and eventually makes peace.</li>
+                    <li>Deep history of the Sith & Old Republic (KOTOR).</li>
+                </ul>
+            </div>
+
+            <div class="lore-card canon">
+                <h3><i class="fas fa-film"></i> Disney Canon</h3>
+                <p>The continuity established after the 2014 reset. Includes the original 6 films, The Clone Wars, and all material released under Disney.</p>
+                <br>
+                <ul class="lore-list">
+                    <li>Ben Solo (Kylo Ren) is the son of Han & Leia.</li>
+                    <li>The First Order rises from the ashes of the Empire.</li>
+                    <li>Luke's Jedi Temple is destroyed early on.</li>
+                    <li>New lore for crystals (Bleeding) and Hyperspace.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div style="margin-top: 3rem;">
+            <h3 style="color: var(--color-primary); margin-bottom: 1rem;">Holocron Data (FAQ)</h3>
+            
+            <div class="faq-item">
+                <button class="faq-question">What is "Fanon"?</button>
+                <div class="faq-answer">
+                    <p>Fanon refers to theories, ideas, and stories created by fans that are not officially recognized in either Canon or Legends. While not official, popular fanon often influences the community's understanding of the lore.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <button class="faq-question">Is Legends completely gone?</button>
+                <div class="faq-answer">
+                    <p>Technically, no. While no new stories are being written in the Legends timeline, the books are still printed under the "Legends" banner, and creators (like Dave Filoni) often pull characters (like Thrawn) from Legends back into Canon.</p>
+                </div>
+            </div>
+
+             <div class="faq-item">
+                <button class="faq-question">Where should I start reading Legends?</button>
+                <div class="faq-answer">
+                    <p>Most fans recommend "The Thrawn Trilogy" (Heir to the Empire) by Timothy Zahn as the best starting point. It picks up 5 years after Return of the Jedi.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Media Gallery -->
+    <section id="gallery">
+        <h2 class="section-title">Visual Archives</h2>
+        <div class="gallery-grid">
+            <div class="gallery-item">
+                <img src="https://placehold.co/600x400/111/444?text=Book+Covers" alt="Book Covers">
+                <div class="gallery-overlay"><i class="fas fa-search fa-2x"></i></div>
+            </div>
+            <div class="gallery-item">
+                <img src="https://placehold.co/600x400/111/444?text=Comic+Art" alt="Comic Art">
+                <div class="gallery-overlay"><i class="fas fa-search fa-2x"></i></div>
+            </div>
+            <div class="gallery-item">
+                <img src="https://placehold.co/600x400/111/444?text=Game+Screenshots" alt="Game Screenshots">
+                <div class="gallery-overlay"><i class="fas fa-search fa-2x"></i></div>
+            </div>
+            <div class="gallery-item">
+                <img src="https://placehold.co/600x400/111/444?text=Concept+Art" alt="Concept Art">
+                <div class="gallery-overlay"><i class="fas fa-search fa-2x"></i></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-socials">
+            <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+            <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+            <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+            <a href="#" aria-label="Discord"><i class="fab fa-discord"></i></a>
+        </div>
+        <p>&copy; 2023 Star Wars Legends Archive. Fan-made site.</p>
+        <p class="disclaimer">Star Wars, the Star Wars logo, all names and pictures of Star Wars characters, vehicles and any other Star Wars related items are registered trademarks and/or copyrights of Lucasfilm Ltd., or their respective trademark and copyright holders. This site is not affiliated with Lucasfilm Ltd. or Disney.</p>
+    </footer>
+
+    <div class="back-to-top" id="backToTop" onclick="scrollToTop()">
+        <i class="fas fa-chevron-up"></i>
+    </div>
+
+    <script>
+        // --- Starfield Background Logic ---
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let stars = [];
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            createStars();
+        }
+
+        function createStars() {
+            stars = [];
+            const starCount = Math.floor((width * height) / 1500); // Density
+            for (let i = 0; i < starCount; i++) {
+                stars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * 2,
+                    speed: Math.random() * 0.5 + 0.1,
+                    brightness: Math.random()
+                });
+            }
+        }
+
+        function animateStars() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = "white";
+            
+            stars.forEach(star => {
+                ctx.globalAlpha = star.brightness;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Move star
+                star.y -= star.speed;
+                // Reset if off screen
+                if (star.y < 0) {
+                    star.y = height;
+                    star.x = Math.random() * width;
+                }
+            });
+            requestAnimationFrame(animateStars);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        animateStars();
+
+        // --- Navigation Toggle ---
+        const mobileMenu = document.getElementById('mobile-menu');
+        const navLinks = document.querySelector('.nav-links');
+
+        mobileMenu.addEventListener('click', () => {
+            navLinks.classList.toggle('active');
+        });
+
+        // Close menu when clicking a link
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('active');
+            });
+        });
+
+        // --- Timeline Scroll Animation ---
+        const timelineItems = document.querySelectorAll('.timeline-item');
+        
+        const timelineObserver = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        timelineItems.forEach(item => {
+            timelineObserver.observe(item);
+        });
+
+        // --- Character Filtering ---
+        function filterCharacters() {
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.char-card');
+
+            cards.forEach(card => {
+                const name = card.querySelector('.char-name').innerText.toLowerCase();
+                if (name.includes(searchInput)) {
+                    card.style.display = "block";
+                } else {
+                    card.style.display = "none";
+                }
+            });
+        }
+
+        function filterGroup(category) {
+            // Update active button state
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const cards = document.querySelectorAll('.char-card');
+            
+            cards.forEach(card => {
+                const cardCat = card.getAttribute('data-category');
+                if (category === 'all' || cardCat === category) {
+                    card.style.display = "block";
+                } else {
+                    card.style.display = "none";
+                }
+            });
+        }
+
+        function focusSearch() {
+            document.getElementById('characters').scrollIntoView();
+            setTimeout(() => {
+                document.getElementById('searchInput').focus();
+            }, 800);
+        }
+
+        // --- FAQ Accordion ---
+        const faqs = document.querySelectorAll('.faq-question');
+        faqs.forEach(faq => {
+            faq.addEventListener('click', () => {
+                faq.classList.toggle('active');
+                const answer = faq.nextElementSibling;
+                if (faq.classList.contains('active')) {
+                    answer.style.maxHeight = answer.scrollHeight + "px";
+                } else {
+                    answer.style.maxHeight = 0;
+                }
+            });
+        });
+
+        // --- Back to Top ---
+        const backToTopBtn = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                backToTopBtn.classList.add('show');
+            } else {
+                backToTopBtn.classList.remove('show');
+            }
+        });
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+    </script>
+</body>
+</html>
