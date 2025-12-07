@@ -343,7 +343,7 @@
 
         .char-img {
             width: 100%;
-            height: 180px; /* Reduced height for tighter crop */
+            height: 180px; 
             background-color: #222;
             display: flex;
             align-items: center;
@@ -351,6 +351,7 @@
             overflow: hidden;
             position: relative;
             cursor: pointer; /* Clickable */
+            z-index: 1; 
         }
 
         /* Holo-scanline effect on images and videos */
@@ -366,7 +367,7 @@
             z-index: 6;
             opacity: 0;
             transition: 0.3s;
-            pointer-events: none;
+            pointer-events: none; /* Allows click through */
         }
         
         .char-img:hover::after {
@@ -385,7 +386,7 @@
                 transparent 1px,
                 transparent 2px
             );
-            pointer-events: none;
+            pointer-events: none; /* Allows click through */
             z-index: 5;
         }
 
@@ -394,9 +395,9 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            object-position: center 15%; /* Shifted view down to crop the top edge */
+            object-position: center 15%; 
             transition: transform 0.3s;
-            pointer-events: none; /* CRITICAL FIX: Allows click to pass to parent div */
+            pointer-events: none; /* CRITICAL: Allows click to pass to parent div */
         }
 
         .char-card:hover .char-img img, .char-card:hover .char-img video {
@@ -446,47 +447,38 @@
         .modal {
             display: none; 
             position: fixed; 
-            z-index: 2000; 
+            z-index: 9999; /* Max Z-Index */
             left: 0; 
             top: 0; 
             width: 100%; 
             height: 100%; 
-            background-color: rgba(0,0,0,0.9); 
-            backdrop-filter: blur(8px);
+            background-color: rgba(0,0,0,0.95); 
+            backdrop-filter: blur(10px);
+            cursor: pointer; 
         }
 
         .modal-content {
-            position: relative;
-            margin: 5% auto;
-            width: 90%;
-            max-width: 800px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: auto;
+            max-width: 90%;
+            max-height: 90vh;
             text-align: center;
-            background: #000;
-            border: 2px solid var(--color-primary);
-            box-shadow: 0 0 30px var(--glow-primary);
-            border-radius: 8px;
-            overflow: hidden;
+            background: transparent;
+            border: none;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5); 
+            outline: none;
         }
 
         .modal-content video {
-            width: 100%;
-            height: auto;
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: 8px;
+            box-shadow: 0 0 30px var(--color-primary);
             display: block;
-        }
-
-        .close-modal {
-            position: absolute;
-            top: -40px;
-            right: 0;
-            color: #fff;
-            font-size: 40px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        
-        .close-modal:hover {
-            color: var(--color-danger);
+            pointer-events: none; /* Passes click through to allow closing */
         }
 
         /* --- Canon vs Legends --- */
@@ -804,10 +796,9 @@
         </div>
 
         <div class="character-grid" id="charGrid">
-            <!-- Card 1 (Video Example) -->
+            <!-- Card 1 -->
             <div class="char-card" data-category="jedi">
-                <!-- Added onclick to open modal -->
-                <div class="char-img" onclick="openVideoModal('https://assets.mixkit.co/videos/preview/mixkit-digital-glitch-on-dark-background-31718-large.mp4')">
+                <div class="char-img" data-video="https://assets.mixkit.co/videos/preview/mixkit-digital-glitch-on-dark-background-31718-large.mp4">
                     <video autoplay loop muted playsinline poster="https://imagine-public.x.ai/imagine-public/images/baf4431b-528c-488c-9620-e317de32abdd.png?cache=1">
                         <source src="luke-sky-walker.mp4" type="video/mp4">
                     </video>
@@ -823,7 +814,7 @@
 
             <!-- Card 2 -->
             <div class="char-card" data-category="sith">
-                <div class="char-img" onclick="openVideoModal('')"> <!-- Add video source URL to function when available -->
+                <div class="char-img" data-video=""> 
                     <video autoplay loop muted playsinline poster="https://placehold.co/400x300/050505/EB212E?text=Darth+Revan">
                          <source src="darth-revan.mp4" type="video/mp4">
                     </video>
@@ -839,7 +830,7 @@
 
             <!-- Card 3 -->
             <div class="char-card" data-category="sith">
-                <div class="char-img" onclick="openVideoModal('')">
+                <div class="char-img" data-video="">
                      <video autoplay loop muted playsinline poster="https://placehold.co/400x300/050505/2E67F8?text=Grand+Admiral+Thrawn">
                          <source src="grand-admiral-thrawn.mp4" type="video/mp4">
                     </video>
@@ -854,7 +845,7 @@
 
             <!-- Card 4 -->
             <div class="char-card" data-category="jedi">
-                <div class="char-img" onclick="openVideoModal('')">
+                <div class="char-img" data-video="">
                      <video autoplay loop muted playsinline poster="https://placehold.co/400x300/050505/A020F0?text=Mara+Jade">
                          <source src="Mara-Jade.mp4" type="video/mp4">
                     </video>
@@ -870,7 +861,7 @@
 
             <!-- Card 5 -->
             <div class="char-card" data-category="sith">
-                <div class="char-img" onclick="openVideoModal('')">
+                <div class="char-img" data-video="">
                      <video autoplay loop muted playsinline poster="https://placehold.co/400x300/050505/EB212E?text=Darth+Bane">
                          <source src="darth-bane.mp4" type="video/mp4">
                     </video>
@@ -885,8 +876,9 @@
 
             <!-- Card 6 -->
             <div class="char-card" data-category="other">
-                <div class="char-img" onclick="openVideoModal('')">
-                     <video autoplay loop muted playsinline poster="https://placehold.co/400x300/050505/4CBB17?text=Boba+Fett">
+                <div class="char-img" data-video="">
+                     <!-- Added inline style to adjust crop position specifically for Boba Fett -->
+                     <video autoplay loop muted playsinline poster="https://placehold.co/400x300/050505/4CBB17?text=Boba+Fett" style="object-position: center 40%;">
                          <source src="boba-fett.mp4" type="video/mp4">
                     </video>
                 </div>
@@ -997,9 +989,7 @@
     <!-- Video Modal HTML -->
     <div id="videoModal" class="modal">
         <div class="modal-content">
-            <span class="close-modal" onclick="closeVideoModal()">&times;</span>
-            <video id="fullVideo" controls autoplay loop playsinline>
-                <source src="" type="video/mp4">
+            <video id="fullVideo" autoplay loop muted playsinline>
                 Your browser does not support the video tag.
             </video>
         </div>
@@ -1160,13 +1150,31 @@
         // --- Video Modal Logic ---
         const videoModal = document.getElementById('videoModal');
         const fullVideo = document.getElementById('fullVideo');
+        const STATIC_VIDEO_URL = 'https://assets.mixkit.co/videos/preview/mixkit-digital-glitch-on-dark-background-31718-large.mp4';
+
+        // Add Click Listeners to all character images via JavaScript
+        document.addEventListener('DOMContentLoaded', () => {
+            const charImages = document.querySelectorAll('.char-img');
+            charImages.forEach(imgDiv => {
+                imgDiv.addEventListener('click', () => {
+                    const videoSrc = imgDiv.getAttribute('data-video');
+                    openVideoModal(videoSrc);
+                });
+            });
+        });
 
         function openVideoModal(videoSrc) {
-            if (!videoSrc) return; // Don't open if no source
-            fullVideo.src = videoSrc;
-            fullVideo.load(); // Ensure the new source is loaded
+            // Use provided URL or fallback to static if empty
+            const finalSrc = videoSrc || STATIC_VIDEO_URL;
+            
+            fullVideo.src = finalSrc;
+            fullVideo.load();
             videoModal.style.display = "block";
-            fullVideo.play().catch(e => console.log("Auto-play prevented:", e));
+            
+            // Attempt to play
+            fullVideo.play().catch(e => {
+                console.log("Auto-play prevented:", e);
+            });
         }
 
         function closeVideoModal() {
@@ -1175,12 +1183,15 @@
             fullVideo.src = ""; // Stop buffering
         }
 
-        // Close modal when clicking outside content
+        // Close modal when clicking anywhere on it
         window.onclick = function(event) {
-            if (event.target == videoModal) {
+            if (event.target == videoModal || event.target == fullVideo) {
                 closeVideoModal();
             }
         }
+        
+        // Also close if clicking the modal content wrapper (outside the video frame)
+        document.querySelector('.modal-content').addEventListener('click', closeVideoModal);
 
     </script>
 </body>
