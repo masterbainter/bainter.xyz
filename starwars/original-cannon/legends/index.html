@@ -475,6 +475,10 @@
         .modal-content video {
             max-width: 100%;
             max-height: 80vh;
+            /* Fallback styling if video fails */
+            min-width: 300px;
+            min-height: 200px;
+            background-color: #222; 
             border-radius: 8px;
             box-shadow: 0 0 30px var(--color-primary);
             display: block;
@@ -798,8 +802,11 @@
         <div class="character-grid" id="charGrid">
             <!-- Card 1 -->
             <div class="char-card" data-category="jedi">
-                <div class="char-img" data-video="https://assets.mixkit.co/videos/preview/mixkit-digital-glitch-on-dark-background-31718-large.mp4">
+                <!-- Using inline onclick to guarantee execution -->
+                <!-- The provided URL is a fallback test video to ensure something works -->
+                <div class="char-img" onclick="openVideoModal('luke-sky-walker.mp4')">
                     <video autoplay loop muted playsinline poster="https://imagine-public.x.ai/imagine-public/images/baf4431b-528c-488c-9620-e317de32abdd.png?cache=1">
+                        <!-- Replace src with your local file: luke-sky-walker.mp4 -->
                         <source src="luke-sky-walker.mp4" type="video/mp4">
                     </video>
                 </div>
@@ -814,7 +821,7 @@
 
             <!-- Card 2 -->
             <div class="char-card" data-category="sith">
-                <div class="char-img" data-video=""> 
+                <div class="char-img" onclick="openVideoModal('darth-revan.mp4')"> 
                     <video autoplay loop muted playsinline poster="https://placehold.co/400x300/050505/EB212E?text=Darth+Revan">
                          <source src="darth-revan.mp4" type="video/mp4">
                     </video>
@@ -830,7 +837,7 @@
 
             <!-- Card 3 -->
             <div class="char-card" data-category="sith">
-                <div class="char-img" data-video="">
+                <div class="char-img" onclick="openVideoModal('grand-admiral-thrawn.mp4')">
                      <video autoplay loop muted playsinline poster="https://placehold.co/400x300/050505/2E67F8?text=Grand+Admiral+Thrawn">
                          <source src="grand-admiral-thrawn.mp4" type="video/mp4">
                     </video>
@@ -845,7 +852,7 @@
 
             <!-- Card 4 -->
             <div class="char-card" data-category="jedi">
-                <div class="char-img" data-video="">
+                <div class="char-img" onclick="openVideoModal('Mara-Jade.mp4')">
                      <video autoplay loop muted playsinline poster="https://placehold.co/400x300/050505/A020F0?text=Mara+Jade">
                          <source src="Mara-Jade.mp4" type="video/mp4">
                     </video>
@@ -861,7 +868,7 @@
 
             <!-- Card 5 -->
             <div class="char-card" data-category="sith">
-                <div class="char-img" data-video="">
+                <div class="char-img" onclick="openVideoModal('darth-bane.mp4')">
                      <video autoplay loop muted playsinline poster="https://placehold.co/400x300/050505/EB212E?text=Darth+Bane">
                          <source src="darth-bane.mp4" type="video/mp4">
                     </video>
@@ -876,7 +883,7 @@
 
             <!-- Card 6 -->
             <div class="char-card" data-category="other">
-                <div class="char-img" data-video="">
+                <div class="char-img" onclick="openVideoModal('boba-fett.mp4')">
                      <!-- Added inline style to adjust crop position specifically for Boba Fett -->
                      <video autoplay loop muted playsinline poster="https://placehold.co/400x300/050505/4CBB17?text=Boba+Fett" style="object-position: center 40%;">
                          <source src="boba-fett.mp4" type="video/mp4">
@@ -1150,22 +1157,13 @@
         // --- Video Modal Logic ---
         const videoModal = document.getElementById('videoModal');
         const fullVideo = document.getElementById('fullVideo');
-        const STATIC_VIDEO_URL = 'https://assets.mixkit.co/videos/preview/mixkit-digital-glitch-on-dark-background-31718-large.mp4';
-
-        // Add Click Listeners to all character images via JavaScript
-        document.addEventListener('DOMContentLoaded', () => {
-            const charImages = document.querySelectorAll('.char-img');
-            charImages.forEach(imgDiv => {
-                imgDiv.addEventListener('click', () => {
-                    const videoSrc = imgDiv.getAttribute('data-video');
-                    openVideoModal(videoSrc);
-                });
-            });
-        });
+        // A reliable fallback video (Google's CDN sample) to ensure it works even without local files
+        const STATIC_VIDEO_URL = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4';
 
         function openVideoModal(videoSrc) {
             // Use provided URL or fallback to static if empty
             const finalSrc = videoSrc || STATIC_VIDEO_URL;
+            console.log("Opening video source:", finalSrc); // Debug log
             
             fullVideo.src = finalSrc;
             fullVideo.load();
