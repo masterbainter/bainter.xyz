@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Biohacker's Protocol: Diet & Focus Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fcfbf9; /* Warm neutral background */
+            color: #2d2a26;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af; 
+        }
+
+        /* Chart Container Utilities */
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 300px;
+            margin: 0 auto;
+        }
+        @media (min-width: 768px) {
+            .chart-wrapper {
+                height: 350px;
+            }
+        }
+        .chart-wrapper canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* Card Hover Effects */
+        .bio-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .bio-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .bio-card.active {
+            border-left-color: #d97706; /* Amber-600 */
+        }
+
+        /* Type Tags */
+        .tag-strict {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .tag-nonstrict {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+    </style>
+    <!-- Chosen Palette: Warm Neutrals (Cream/Beige base) with Amber/Terracotta accents for energy and Sage/Slate for science/calm. -->
+    <!-- Application Structure Plan:
+        1. Header: Clean introduction setting the stage for biohacking.
+        2. Analytics Dashboard: Visualizing the split between "Strict Carnivore" and "Balanced/Science" approaches to give a high-level overview of the dataset.
+        3. Interactive Protocol Explorer: The core grid. Users can filter biohackers by diet type or primary goal. Clicking a card expands details (simulating a modal/detail view within the grid) to show specific supplements and focus hacks.
+        4. "Find Your Tribe" Wizard: A simple interactive decision tree to recommend biohackers based on user preference (Simplicity vs. Data vs. Longevity).
+        5. Comparative Analysis: Text-based synthesis comparing the two main schools of thought found in the report.
+    -->
+    <!-- Visualization & Content Choices:
+        1. Distribution Donut Chart: Shows the dominance of Carnivore vs. Non-Strict in this specific list.
+        2. Focus Benefits Bar Chart: Quantifies the most common "promises" (Mental Clarity, Longevity, etc.).
+        3. Dynamic Grid: Text cards with color-coded tags. No images used (using initials/icons).
+        4. Filters: Javascript-driven filtering for immediate feedback.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <!-- Header Section -->
+    <header class="w-full bg-white border-b border-gray-200 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="h-8 w-8 bg-amber-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">B</div>
+                <h1 class="text-xl font-bold text-gray-800 tracking-tight">The Biohacker's Protocol</h1>
+            </div>
+            <nav class="hidden md:flex space-x-6 text-sm font-medium text-gray-500">
+                <a href="#dashboard" class="hover:text-amber-600 transition-colors">Overview</a>
+                <a href="#explorer" class="hover:text-amber-600 transition-colors">Influencers</a>
+                <a href="#comparison" class="hover:text-amber-600 transition-colors">Analysis</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
+
+        <!-- Intro Section -->
+        <section class="text-center max-w-3xl mx-auto space-y-4">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900">Optimize Your Biology</h2>
+            <p class="text-lg text-gray-600 leading-relaxed">
+                Explore the protocols of top biohackers. From strict evolutionary diets to data-driven longevity science, discover how these experts engineer their diet and supplements for peak mental clarity, focus, and physical performance.
+            </p>
+        </section>
+
+        <!-- Dashboard / Analytics Section -->
+        <section id="dashboard" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+            <div class="mb-6">
+                <h3 class="text-2xl font-bold text-gray-800">Landscape Analysis</h3>
+                <p class="text-gray-500 mt-2">Visualizing the dominant methodologies and promised outcomes within the biohacking community.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                <!-- Chart 1: Diet Distribution -->
+                <div class="flex flex-col items-center">
+                    <h4 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Dietary Philosophy Split</h4>
+                    <div class="chart-wrapper">
+                        <canvas id="dietChart"></canvas>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-4 text-center">Breakdown of Strict Carnivore vs. Non-Strict/Integrative approaches among the 15 analyzed profiles.</p>
+                </div>
+
+                <!-- Chart 2: Primary Focus Outcomes -->
+                <div class="flex flex-col items-center w-full">
+                    <h4 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Top Claimed Benefits</h4>
+                    <div class="chart-wrapper">
+                        <canvas id="benefitChart"></canvas>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-4 text-center">Frequency of key benefits cited (e.g., Mental Clarity, Longevity) across all profiles.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Wizard / "Find Your Tribe" -->
+        <section class="bg-amber-50 rounded-2xl p-6 md:p-8 border border-amber-100">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex-1">
+                    <h3 class="text-xl font-bold text-amber-900">Find Your Protocol</h3>
+                    <p class="text-amber-800 mt-2 text-sm">Not sure where to start? Select your primary goal to filter the expert list below.</p>
+                </div>
+                <div class="flex flex-wrap gap-3 justify-center md:justify-end">
+                    <button onclick="filterByGoal('Mental Clarity')" class="px-4 py-2 bg-white text-amber-900 font-medium rounded-full shadow-sm hover:bg-amber-100 transition border border-amber-200 text-sm">🧠 Max Focus</button>
+                    <button onclick="filterByGoal('Longevity')" class="px-4 py-2 bg-white text-amber-900 font-medium rounded-full shadow-sm hover:bg-amber-100 transition border border-amber-200 text-sm">⏳ Live Longer</button>
+                    <button onclick="filterByGoal('Simplicity')" class="px-4 py-2 bg-white text-amber-900 font-medium rounded-full shadow-sm hover:bg-amber-100 transition border border-amber-200 text-sm">🥩 Simplicity</button>
+                    <button onclick="resetFilters()" class="px-4 py-2 bg-amber-900 text-white font-medium rounded-full shadow-sm hover:bg-amber-800 transition text-sm">Show All</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Explorer Section -->
+        <section id="explorer" class="space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <h3 class="text-2xl font-bold text-gray-800">Expert Profiles</h3>
+                <div class="flex items-center space-x-2 bg-white rounded-lg border border-gray-200 p-1">
+                    <button onclick="filterList('all')" id="btn-all" class="px-4 py-1.5 rounded-md text-sm font-medium bg-gray-100 text-gray-900 hover:bg-gray-200 transition">All</button>
+                    <button onclick="filterList('Strict Carnivore')" id="btn-carnivore" class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition">Carnivore</button>
+                    <button onclick="filterList('Non-Strict')" id="btn-nonstrict" class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition">Integrative</button>
+                </div>
+            </div>
+
+            <!-- Dynamic Grid -->
+            <div id="profilesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Content populated by JS -->
+            </div>
+            
+            <p id="noResultsMsg" class="hidden text-center text-gray-500 py-12">No profiles match the selected criteria.</p>
+        </section>
+
+        <!-- Detailed Detail View (Hidden by default, used for logic) -->
+        <div id="detailOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-40 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative animate-fade-in">
+                <button onclick="closeDetail()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                    <span class="text-2xl">&times;</span>
+                </button>
+                <div id="detailContent" class="p-6 md:p-8">
+                    <!-- Dynamic Detail Content -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparative Analysis -->
+        <section id="comparison" class="bg-slate-50 rounded-2xl p-8 border border-slate-200">
+            <h3 class="text-2xl font-bold text-slate-800 mb-6">Comparative Synthesis</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h4 class="text-lg font-bold text-red-800 mb-3 flex items-center">
+                        <span class="w-3 h-3 bg-red-600 rounded-full mr-2"></span>
+                        Evolutionary / Strict Carnivore
+                    </h4>
+                    <p class="text-slate-600 text-sm leading-relaxed mb-4">
+                        **Core Philosophy:** Elimination is key. Humans evolved to eat meat; plants contain defense chemicals (antinutrients) that cause inflammation and brain fog.
+                    </p>
+                    <ul class="space-y-2">
+                        <li class="flex items-start text-sm text-slate-700">
+                            <span class="mr-2 mt-1 text-red-500">➤</span>
+                            <span><strong>Focus Hack:</strong> Stable blood sugar and ketone production (without fasting) leads to "unshakeable" mental clarity.</span>
+                        </li>
+                        <li class="flex items-start text-sm text-slate-700">
+                            <span class="mr-2 mt-1 text-red-500">➤</span>
+                            <span><strong>Key Figures:</strong> Shawn Baker, Jordan Peterson, Ken Berry.</span>
+                        </li>
+                        <li class="flex items-start text-sm text-slate-700">
+                            <span class="mr-2 mt-1 text-red-500">➤</span>
+                            <span><strong>Supplements:</strong> Minimalist. Salt, electrolytes, organ meats (for some).</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-lg font-bold text-teal-800 mb-3 flex items-center">
+                        <span class="w-3 h-3 bg-teal-600 rounded-full mr-2"></span>
+                        Integrative / Data-Driven
+                    </h4>
+                    <p class="text-slate-600 text-sm leading-relaxed mb-4">
+                        **Core Philosophy:** Additive optimization. Use technology, diverse nutrients, and supplements to upgrade biology beyond baseline survival.
+                    </p>
+                    <ul class="space-y-2">
+                        <li class="flex items-start text-sm text-slate-700">
+                            <span class="mr-2 mt-1 text-teal-500">➤</span>
+                            <span><strong>Focus Hack:</strong> Circadian regulation (light), Nootropics, intermittent fasting, and micronutrient density.</span>
+                        </li>
+                        <li class="flex items-start text-sm text-slate-700">
+                            <span class="mr-2 mt-1 text-teal-500">➤</span>
+                            <span><strong>Key Figures:</strong> Andrew Huberman, Dave Asprey, Bryan Johnson.</span>
+                        </li>
+                        <li class="flex items-start text-sm text-slate-700">
+                            <span class="mr-2 mt-1 text-teal-500">➤</span>
+                            <span><strong>Supplements:</strong> Extensive. Omega-3s, Vitamin D, Magnesium, specific peptides.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 mt-12 py-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-gray-400 text-sm">
+            <p>&copy; 2024 Biohacker Protocol Analysis. Generated from Source Report.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- DATA STORE ---
+        const influencers = [
+            {
+                name: "Shawn Baker",
+                handle: "@shawnbaker1967",
+                role: "Orthopedic Surgeon & Athlete",
+                dietCategory: "Strict Carnivore",
+                dietDetails: "Meat-only nutrition.",
+                claims: "Physical and mental performance, strength, focus.",
+                biohack: "Elimination of all plant toxins.",
+                focusStrategy: "Stable energy from fat adaptation; claims clear mind boosts productivity.",
+                tags: ["Mental Clarity", "Strength", "Simplicity"],
+                color: "bg-red-50 border-red-100"
+            },
+            {
+                name: "Paul Saladino",
+                handle: "@carnivoremd",
+                role: "MD",
+                dietCategory: "Strict Carnivore",
+                dietDetails: "Nose-to-tail carnivore (includes organs).",
+                claims: "Hormone optimization, mental health.",
+                biohack: "Organ meats (liver/heart) for micronutrients.",
+                focusStrategy: "Removing plant inflammation to reduce brain fog.",
+                tags: ["Hormones", "Mental Health", "Organs"],
+                color: "bg-red-50 border-red-100"
+            },
+            {
+                name: "Dave Asprey",
+                handle: "@daveasprey",
+                role: "Founder of Bulletproof",
+                dietCategory: "Non-Strict",
+                dietDetails: "Keto/High-Fat Meat-Heavy with some plants.",
+                claims: "Cognitive enhancement, brain function.",
+                biohack: "MCT Oil, Coffee, Biohacking tech.",
+                focusStrategy: "Brain function upgrades through specific fats and routines.",
+                tags: ["Mental Clarity", "Cognition", "Tech"],
+                color: "bg-teal-50 border-teal-100"
+            },
+            {
+                name: "Mikhaila Peterson",
+                handle: "@mikhailapeterson",
+                role: "Influencer",
+                dietCategory: "Strict Carnivore",
+                dietDetails: "Lion Diet (Beef, Salt, Water only).",
+                claims: "Reversing autoimmune issues, focus.",
+                biohack: "Extreme elimination for immune reset.",
+                focusStrategy: "Productivity improvements via symptom remission.",
+                tags: ["Autoimmune", "Mental Clarity", "Simplicity"],
+                color: "bg-red-50 border-red-100"
+            },
+            {
+                name: "Ken Berry",
+                handle: "@kendberry.md",
+                role: "MD",
+                dietCategory: "Strict Carnivore",
+                dietDetails: "Low-carb animal foods.",
+                claims: "Disease reversal, energy stability.",
+                biohack: "Removing chronic inflammation triggers.",
+                focusStrategy: "Mental clarity from ditching carbs/sugar crash.",
+                tags: ["Disease Reversal", "Energy", "Simplicity"],
+                color: "bg-red-50 border-red-100"
+            },
+            {
+                name: "Anthony Chaffee",
+                handle: "@anthonychaffeemd",
+                role: "Neurosurgeon",
+                dietCategory: "Strict Carnivore",
+                dietDetails: "Plant-free carnivore.",
+                claims: "Brain health, mental sharpness.",
+                biohack: "Evolutionary consistent nutrition.",
+                focusStrategy: "Enhanced cognitive function by avoiding plant defense chemicals.",
+                tags: ["Brain Health", "Evolutionary", "Cognition"],
+                color: "bg-red-50 border-red-100"
+            },
+            {
+                name: "Jordan Peterson",
+                handle: "@jordanbpeterson",
+                role: "Psychologist/Author",
+                dietCategory: "Strict Carnivore",
+                dietDetails: "Beef, salt, water.",
+                claims: "Mental resilience, productivity.",
+                biohack: "Diet as a foundation for psychological order.",
+                focusStrategy: "Depression/Anxiety relief enabling deep work.",
+                tags: ["Mental Health", "Resilience", "Productivity"],
+                color: "bg-red-50 border-red-100"
+            },
+            {
+                name: "Amber O’Hearn",
+                handle: "@ketocarnivore",
+                role: "Researcher",
+                dietCategory: "Strict Carnivore",
+                dietDetails: "Carnivore (Ketogenic focus).",
+                claims: "Metabolic health, mental optimization.",
+                biohack: "Nutritional ketosis via meat.",
+                focusStrategy: "Reduced brain fog, consistent mental energy.",
+                tags: ["Metabolic Health", "Mental Clarity", "Research"],
+                color: "bg-red-50 border-red-100"
+            },
+            {
+                name: "Bear Grylls",
+                handle: "@beargrylls",
+                role: "Survival Expert",
+                dietCategory: "Strict Carnivore",
+                dietDetails: "Wild meat, natural animal foods.",
+                claims: "Endurance, mental toughness.",
+                biohack: "Ancestral living patterns.",
+                focusStrategy: "High-performance lifestyle fueled by dense protein.",
+                tags: ["Endurance", "Mental Toughness", "Evolutionary"],
+                color: "bg-red-50 border-red-100"
+            },
+            {
+                name: "Kelly Hogan",
+                handle: "@kelly_hogan91",
+                role: "Advocate",
+                dietCategory: "Strict Carnivore",
+                dietDetails: "Zero carb.",
+                claims: "Weight loss, hormonal balance.",
+                biohack: "Fat adaptation for stable mood.",
+                focusStrategy: "Daily focus and energy for productive living.",
+                tags: ["Weight Loss", "Hormones", "Energy"],
+                color: "bg-red-50 border-red-100"
+            },
+            {
+                name: "Andrew Huberman",
+                handle: "@hubermanlab",
+                role: "Neuroscientist",
+                dietCategory: "Non-Strict",
+                dietDetails: "Omnivore + Intermittent Fasting.",
+                claims: "Brain optimization, sleep.",
+                biohack: "Light exposure, NSDR, Supplements.",
+                focusStrategy: "Dopamine management and circadian rhythm protocols.",
+                tags: ["Brain Health", "Sleep", "Science"],
+                color: "bg-teal-50 border-teal-100"
+            },
+            {
+                name: "Rhonda Patrick",
+                handle: "@foundmyfitness",
+                role: "Biomedical Scientist",
+                dietCategory: "Non-Strict",
+                dietDetails: "Whole-food, protein-dense, plants.",
+                claims: "Longevity, cognitive function.",
+                biohack: "DNA testing, micronutrients, sauna/cold.",
+                focusStrategy: "Omega-3s and sulforaphane for brain health.",
+                tags: ["Longevity", "Cognition", "Genetics"],
+                color: "bg-teal-50 border-teal-100"
+            },
+            {
+                name: "Peter Attia",
+                handle: "@peterattiamd",
+                role: "MD (Longevity)",
+                dietCategory: "Non-Strict",
+                dietDetails: "Balanced Whole-Foods + Fasting.",
+                claims: "Metabolic health, lifespan.",
+                biohack: "Zone 2 cardio, rapamycin (discussed), glucose tracking.",
+                focusStrategy: "Sustained energy via metabolic flexibility.",
+                tags: ["Longevity", "Metabolic Health", "Science"],
+                color: "bg-teal-50 border-teal-100"
+            },
+            {
+                name: "Mark Hyman",
+                handle: "@drmarkhyman",
+                role: "Functional Medicine MD",
+                dietCategory: "Non-Strict",
+                dietDetails: "Pegan (Paleo + Vegan elements).",
+                claims: "Inflammation reduction, holistic health.",
+                biohack: "Food as medicine.",
+                focusStrategy: "Nutrient density to power brain performance.",
+                tags: ["Inflammation", "Holistic", "Energy"],
+                color: "bg-teal-50 border-teal-100"
+            },
+            {
+                name: "Bryan Johnson",
+                handle: "@bryanjohnson_",
+                role: "Tech Entrepreneur",
+                dietCategory: "Non-Strict",
+                dietDetails: "Plant-Based + Massive Supplementation.",
+                claims: "Anti-aging, optimal metrics.",
+                biohack: "Blueprint protocol (measurement of all organs).",
+                focusStrategy: "Strict routine/fasting for cognitive gains.",
+                tags: ["Longevity", "Anti-aging", "Data"],
+                color: "bg-teal-50 border-teal-100"
+            }
+        ];
+
+        // --- CHART INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            renderDietChart();
+            renderBenefitChart();
+            renderGrid(influencers);
+        });
+
+        function renderDietChart() {
+            const ctx = document.getElementById('dietChart').getContext('2d');
+            const strictCount = influencers.filter(i => i.dietCategory === "Strict Carnivore").length;
+            const nonStrictCount = influencers.filter(i => i.dietCategory === "Non-Strict").length;
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Strict Carnivore', 'Non-Strict / Integrative'],
+                    datasets: [{
+                        data: [strictCount, nonStrictCount],
+                        backgroundColor: ['#b91c1c', '#0d9488'], // Red-700, Teal-600
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, font: {family: 'Inter'} } }
+                    }
+                }
+            });
+        }
+
+        function renderBenefitChart() {
+            const ctx = document.getElementById('benefitChart').getContext('2d');
+            
+            // Count tags
+            const tagCounts = {};
+            influencers.forEach(p => {
+                p.tags.forEach(t => {
+                    tagCounts[t] = (tagCounts[t] || 0) + 1;
+                });
+            });
+
+            // Sort and take top 5
+            const sortedTags = Object.entries(tagCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 7);
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sortedTags.map(t => t[0]),
+                    datasets: [{
+                        label: 'Mentions',
+                        data: sortedTags.map(t => t[1]),
+                        backgroundColor: '#d97706', // Amber-600
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { display: false } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // --- GRID RENDERING & FILTERING ---
+        const grid = document.getElementById('profilesGrid');
+        const noResults = document.getElementById('noResultsMsg');
+        const btnAll = document.getElementById('btn-all');
+        const btnCarnivore = document.getElementById('btn-carnivore');
+        const btnNonStrict = document.getElementById('btn-nonstrict');
+
+        function renderGrid(data) {
+            grid.innerHTML = '';
+            if(data.length === 0) {
+                noResults.classList.remove('hidden');
+                return;
+            } else {
+                noResults.classList.add('hidden');
+            }
+
+            data.forEach((person, index) => {
+                const initials = person.name.split(' ').map(n => n[0]).join('');
+                const tagColorClass = person.dietCategory === "Strict Carnivore" ? "tag-strict" : "tag-nonstrict";
+                
+                const card = document.createElement('div');
+                card.className = `bio-card bg-white rounded-xl p-6 shadow-sm border border-gray-100 cursor-pointer ${person.color}`;
+                card.onclick = () => showDetail(person);
+
+                card.innerHTML = `
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-sm">
+                                ${initials}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900 leading-tight">${person.name}</h4>
+                                <p class="text-xs text-gray-500">${person.role}</p>
+                            </div>
+                        </div>
+                        <span class="text-xs px-2 py-1 rounded-full font-medium ${tagColorClass}">
+                            ${person.dietCategory === 'Strict Carnivore' ? 'Carnivore' : 'Integrative'}
+                        </span>
+                    </div>
+                    
+                    <p class="text-sm text-gray-600 mb-4 line-clamp-2">${person.claims}</p>
+                    
+                    <div class="flex flex-wrap gap-2 mt-auto">
+                        ${person.tags.map(tag => `<span class="text-[10px] px-2 py-1 bg-white border border-gray-200 rounded text-gray-500 uppercase tracking-wide">${tag}</span>`).join('')}
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-100 flex items-center text-amber-600 text-xs font-semibold group">
+                        View Protocol <span class="ml-1 group-hover:translate-x-1 transition-transform">→</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterList(type) {
+            // UI State
+            [btnAll, btnCarnivore, btnNonStrict].forEach(b => {
+                b.classList.remove('bg-gray-100', 'text-gray-900');
+                b.classList.add('text-gray-500');
+            });
+
+            let filtered = [];
+            if (type === 'all') {
+                filtered = influencers;
+                btnAll.classList.add('bg-gray-100', 'text-gray-900');
+                btnAll.classList.remove('text-gray-500');
+            } else {
+                filtered = influencers.filter(i => i.dietCategory === type);
+                const activeBtn = type === 'Strict Carnivore' ? btnCarnivore : btnNonStrict;
+                activeBtn.classList.add('bg-gray-100', 'text-gray-900');
+                activeBtn.classList.remove('text-gray-500');
+            }
+            renderGrid(filtered);
+        }
+
+        // --- WIZARD LOGIC ---
+        function filterByGoal(goal) {
+            let filtered = [];
+            if (goal === 'Simplicity') {
+                // Heuristic: Carnivore implies simplicity
+                filtered = influencers.filter(i => i.dietCategory === "Strict Carnivore");
+            } else if (goal === 'Longevity') {
+                filtered = influencers.filter(i => i.tags.includes('Longevity') || i.tags.includes('Anti-aging') || i.tags.includes('Disease Reversal'));
+            } else if (goal === 'Mental Clarity') {
+                filtered = influencers.filter(i => i.tags.includes('Mental Clarity') || i.tags.includes('Brain Health') || i.tags.includes('Cognition'));
+            }
+            
+            // Highlight section
+            document.getElementById('explorer').scrollIntoView({ behavior: 'smooth' });
+            renderGrid(filtered);
+        }
+
+        function resetFilters() {
+            filterList('all');
+        }
+
+        // --- DETAIL OVERLAY ---
+        const overlay = document.getElementById('detailOverlay');
+        const content = document.getElementById('detailContent');
+
+        function showDetail(person) {
+            const initials = person.name.split(' ').map(n => n[0]).join('');
+            
+            content.innerHTML = `
+                <div class="flex items-center space-x-4 mb-6">
+                    <div class="h-16 w-16 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-2xl">
+                        ${initials}
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">${person.name}</h2>
+                        <a href="https://${person.handle.includes('YouTube') ? 'youtube.com' : 'instagram.com'}/${person.handle.replace('@','')}" target="_blank" class="text-amber-600 text-sm hover:underline">${person.handle}</a>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                        <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wide mb-2">The Diet</h3>
+                        <p class="text-gray-700">${person.dietDetails}</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                            <h3 class="text-sm font-bold text-blue-900 uppercase tracking-wide mb-2">Biohack / Supplement</h3>
+                            <p class="text-blue-800 text-sm">${person.biohack}</p>
+                        </div>
+                        <div class="bg-amber-50 p-4 rounded-lg border border-amber-100">
+                            <h3 class="text-sm font-bold text-amber-900 uppercase tracking-wide mb-2">Focus & Productivity</h3>
+                            <p class="text-amber-800 text-sm">${person.focusStrategy}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wide mb-2">Core Claims</h3>
+                        <p class="text-gray-600 italic">"${person.claims}"</p>
+                    </div>
+                </div>
+            `;
+            
+            overlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Prevent scrolling bg
+        }
+
+        function closeDetail() {
+            overlay.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close on clicking outside
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeDetail();
+        });
+        
+        // Escape key close
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeDetail();
+        });
+
+    </script>
+</body>
+</html>
