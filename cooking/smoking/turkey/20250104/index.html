@@ -1,0 +1,388 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Flame, 
+  Clock, 
+  CheckCircle2, 
+  Circle, 
+  ChefHat, 
+  Thermometer, 
+  Wind, 
+  Edit3, 
+  Save, 
+  Trash2,
+  Mountain,
+  Utensils
+} from 'lucide-react';
+
+const DakotaSmokeApp = () => {
+  // --- State Management ---
+  const [activeTab, setActiveTab] = useState('guide');
+  const [progress, setProgress] = useState(0);
+  
+  // Icon mapping to keep state serializable (JSON friendly)
+  const iconMap = {
+    chef: <ChefHat className="w-6 h-6" />,
+    flame: <Flame className="w-6 h-6" />,
+    thermometer: <Thermometer className="w-6 h-6" />,
+    wind: <Wind className="w-6 h-6" />
+  };
+
+  // Initial Data Structure - using string keys for icons instead of components
+  const initialSteps = [
+    {
+      id: 1,
+      title: "The Prep",
+      subtitle: "Counter Setup",
+      iconKey: "chef",
+      color: "from-amber-600 to-orange-700",
+      tasks: [
+        { id: 'p1', text: "Mix Rub: 1/2 cup Tone's Italian + 2 tbsp Sea Salt", completed: false },
+        { id: 'p2', text: "Pat turkey skin completely dry with paper towels", completed: false },
+        { id: 'p3', text: "Coat bird lightly with Colavita Olive Oil (Binder)", completed: false },
+        { id: 'p4', text: "Apply Rub mixture generously over entire bird", completed: false },
+        { id: 'p5', text: "Let sit at room temp while prepping grill", completed: false }
+      ],
+      note: ""
+    },
+    {
+      id: 2,
+      title: "The Setup",
+      subtitle: "Traeger Century 885",
+      iconKey: "flame",
+      color: "from-stone-700 to-stone-900",
+      tasks: [
+        { id: 's1', text: "Fill Hopper: Fruit (Cherry/Apple) or Hickory pellets", completed: false },
+        { id: 's2', text: "Place empty roasting pan UNDER the grill grates", completed: false },
+        { id: 's3', text: "Place turkey DIRECTLY on the grill grates", completed: false },
+        { id: 's4', text: "Insert probe into thickest part of breast", completed: false }
+      ],
+      note: ""
+    },
+    {
+      id: 3,
+      title: "The Cook",
+      subtitle: "Smoke & Roast Strategy",
+      iconKey: "thermometer",
+      color: "from-red-700 to-red-900",
+      tasks: [
+        { id: 'c1', text: "Set Traeger to 225°F (Super Smoke if avail)", completed: false },
+        { id: 'c2', text: "SMOKE: Cook for 1 hour exactly", completed: false, hasTimer: true, duration: 3600 },
+        { id: 'c3', text: "Increase Temp: Crank heat to 350°F - 375°F", completed: false },
+        { id: 'c4', text: "ROAST: Cook until internal breast temp hits 160°F", completed: false },
+      ],
+      note: ""
+    },
+    {
+      id: 4,
+      title: "The Rest",
+      subtitle: "Patience Pays Off",
+      iconKey: "wind",
+      color: "from-emerald-700 to-emerald-900",
+      tasks: [
+        { id: 'r1', text: "Remove bird, place on board/pan", completed: false },
+        { id: 'r2', text: "Tent loosely with foil", completed: false },
+        { id: 'r3', text: "REST: Wait at least 30 minutes before carving", completed: false, hasTimer: true, duration: 1800 },
+        { id: 'r4', text: "Carve and Serve", completed: false }
+      ],
+      note: ""
+    }
+  ];
+
+  const [steps, setSteps] = useState(initialSteps);
+
+  // --- Effects ---
+  
+  // Load from local storage on mount
+  useEffect(() => {
+    try {
+      const savedData = localStorage.getItem('dakotaSmokeData');
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        // Basic validation to ensure data structure matches (prevents crash from old bad data)
+        if (Array.isArray(parsedData) && parsedData[0]?.iconKey) {
+           setSteps(parsedData);
+        } else {
+           // If data format is old/invalid, clear it to be safe
+           localStorage.removeItem('dakotaSmokeData');
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load data", e);
+      localStorage.removeItem('dakotaSmokeData');
+    }
+  }, []);
+
+  // Save to local storage on change
+  useEffect(() => {
+    try {
+      localStorage.setItem('dakotaSmokeData', JSON.stringify(steps));
+      calculateProgress();
+    } catch (e) {
+      console.error("Failed to save progress", e);
+    }
+  }, [steps]);
+
+  const calculateProgress = () => {
+    let totalTasks = 0;
+    let completedTasks = 0;
+    steps.forEach(step => {
+      step.tasks.forEach(task => {
+        totalTasks++;
+        if (task.completed) completedTasks++;
+      });
+    });
+    setProgress(Math.round((completedTasks / totalTasks) * 100));
+  };
+
+  // --- Handlers ---
+
+  const toggleTask = (stepIndex, taskIndex) => {
+    const newSteps = [...steps];
+    newSteps[stepIndex].tasks[taskIndex].completed = !newSteps[stepIndex].tasks[taskIndex].completed;
+    setSteps(newSteps);
+  };
+
+  const updateNote = (stepIndex, noteText) => {
+    const newSteps = [...steps];
+    newSteps[stepIndex].note = noteText;
+    setSteps(newSteps);
+  };
+
+  const resetData = () => {
+    if(confirm("Start a new cook? This will clear all your progress.")) {
+      setSteps(initialSteps);
+      localStorage.removeItem('dakotaSmokeData');
+      setProgress(0);
+    }
+  };
+
+  // --- Components ---
+
+  const Timer = ({ duration, label }) => {
+    const [timeLeft, setTimeLeft] = useState(duration);
+    const [isActive, setIsActive] = useState(false);
+    const intervalRef = useRef(null);
+
+    useEffect(() => {
+      return () => clearInterval(intervalRef.current);
+    }, []);
+
+    const toggleTimer = () => {
+      if (isActive) {
+        clearInterval(intervalRef.current);
+        setIsActive(false);
+      } else {
+        setIsActive(true);
+        intervalRef.current = setInterval(() => {
+          setTimeLeft((prev) => {
+            if (prev <= 1) {
+              clearInterval(intervalRef.current);
+              setIsActive(false);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }
+    };
+
+    const resetTimer = () => {
+      clearInterval(intervalRef.current);
+      setIsActive(false);
+      setTimeLeft(duration);
+    };
+
+    const formatTime = (seconds) => {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    };
+
+    return (
+      <div className="mt-3 p-4 bg-stone-900 rounded-lg border border-stone-700 flex flex-col items-center">
+        <span className="text-stone-400 text-xs font-bold uppercase tracking-widest mb-1">{label}</span>
+        <div className="text-4xl font-mono text-amber-500 mb-3 tabular-nums">
+          {formatTime(timeLeft)}
+        </div>
+        <div className="flex gap-2">
+          <button 
+            onClick={toggleTimer}
+            className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${
+              isActive 
+                ? 'bg-red-900/50 text-red-200 border border-red-700 hover:bg-red-900' 
+                : 'bg-emerald-900/50 text-emerald-200 border border-emerald-700 hover:bg-emerald-900'
+            }`}
+          >
+            {isActive ? 'Pause' : 'Start'}
+          </button>
+          <button 
+            onClick={resetTimer}
+            className="px-4 py-1.5 rounded-full text-sm font-semibold bg-stone-800 text-stone-400 border border-stone-700 hover:bg-stone-700 transition-colors"
+          >
+            Reset
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-[#1a1917] text-stone-200 font-sans selection:bg-amber-900 selection:text-white pb-20">
+      
+      {/* Background Ambience */}
+      <div className="fixed inset-0 z-0 opacity-20 pointer-events-none" 
+           style={{
+             backgroundImage: `radial-gradient(circle at 50% 0%, #C25E00 0%, transparent 40%), radial-gradient(circle at 90% 90%, #1A3C34 0%, transparent 40%)`
+           }}>
+      </div>
+
+      {/* Header */}
+      <header className="relative z-10 bg-[#1a1917]/80 backdrop-blur-md border-b border-stone-800 sticky top-0">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-amber-600 to-orange-800 rounded-lg shadow-lg shadow-orange-900/20">
+              <Mountain className="text-white w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-white font-serif">DAKOTA SMOKE</h1>
+              <p className="text-xs text-amber-500 font-medium tracking-widest uppercase">Traeger Century 885 Edition</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <div className="text-right hidden sm:block">
+              <div className="text-xs text-stone-500 font-bold uppercase tracking-wider">Progress</div>
+              <div className="text-lg font-mono text-emerald-500">{progress}%</div>
+            </div>
+            <button onClick={resetData} className="p-2 text-stone-500 hover:text-red-400 transition-colors" title="Reset Guide">
+              <Trash2 className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+        {/* Mobile Progress Bar */}
+        <div className="h-1 bg-stone-800 w-full">
+          <div className="h-full bg-gradient-to-r from-amber-600 to-emerald-600 transition-all duration-500" style={{width: `${progress}%`}}></div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="relative z-10 max-w-3xl mx-auto px-4 py-6 space-y-8">
+        
+        {/* Intro Card */}
+        <div className="p-6 rounded-2xl bg-stone-900/50 border border-stone-800 backdrop-blur-sm">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-stone-800 rounded-xl hidden sm:block">
+              <Utensils className="w-6 h-6 text-stone-400" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white mb-2 font-serif">The "Smoke & Roast" Strategy</h2>
+              <p className="text-stone-400 text-sm leading-relaxed">
+                Using your specific ingredients (Tone's Italian & Colavita) and the Century 885, we tackle rubbery skin by starting low for flavor, then blasting high heat for texture.
+              </p>
+              
+              {/* Quick Ingredients Badge List */}
+              <div className="flex flex-wrap gap-2 mt-4">
+                <span className="px-2 py-1 bg-stone-800 border border-stone-700 rounded text-xs text-stone-300">Tone's Italian Seasoning</span>
+                <span className="px-2 py-1 bg-stone-800 border border-stone-700 rounded text-xs text-stone-300">Sea Salt</span>
+                <span className="px-2 py-1 bg-stone-800 border border-stone-700 rounded text-xs text-stone-300">Colavita Olive Oil</span>
+                <span className="px-2 py-1 bg-amber-900/30 border border-amber-800/50 rounded text-xs text-amber-500">Fruit/Hickory Pellets</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Steps */}
+        <div className="space-y-6">
+          {steps.map((step, stepIndex) => (
+            <div key={step.id} className="group relative">
+              {/* Step Connector Line */}
+              {stepIndex !== steps.length - 1 && (
+                <div className="absolute left-6 top-16 bottom-[-24px] w-0.5 bg-stone-800 group-hover:bg-stone-700 transition-colors z-0"></div>
+              )}
+
+              <div className="relative z-10 bg-stone-900/80 border border-stone-800 rounded-2xl overflow-hidden shadow-xl transition-all hover:border-stone-700">
+                
+                {/* Step Header */}
+                <div className={`px-6 py-4 bg-gradient-to-r ${step.color} bg-opacity-10 border-b border-white/5`}>
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-black/20 rounded-lg backdrop-blur-sm text-white shadow-inner">
+                      {iconMap[step.iconKey]}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-white font-serif">{step.title}</h3>
+                      <p className="text-sm text-white/70 font-medium">{step.subtitle}</p>
+                    </div>
+                    <div className="text-xs font-bold px-2 py-1 rounded bg-black/20 text-white/80 border border-white/10">
+                      STEP 0{step.id}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step Content */}
+                <div className="p-6">
+                  <div className="space-y-4">
+                    {step.tasks.map((task, taskIndex) => (
+                      <div key={task.id} className="space-y-3">
+                        <div 
+                          onClick={() => toggleTask(stepIndex, taskIndex)}
+                          className={`flex items-start gap-4 p-3 rounded-xl cursor-pointer transition-all duration-200 border ${
+                            task.completed 
+                              ? 'bg-emerald-900/10 border-emerald-900/30' 
+                              : 'bg-stone-800/30 border-transparent hover:bg-stone-800'
+                          }`}
+                        >
+                          <div className={`mt-0.5 flex-shrink-0 transition-colors ${task.completed ? 'text-emerald-500' : 'text-stone-600'}`}>
+                            {task.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
+                          </div>
+                          <span className={`text-sm sm:text-base leading-relaxed transition-all ${
+                            task.completed ? 'text-stone-500 line-through decoration-stone-700' : 'text-stone-200'
+                          }`}>
+                            {task.text}
+                          </span>
+                        </div>
+                        
+                        {/* Integrated Timer for specific tasks */}
+                        {task.hasTimer && !task.completed && (
+                          <div className="ml-10">
+                            <Timer duration={task.duration} label={task.text.split(':')[0]} />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Notes Section */}
+                  <div className="mt-6 pt-6 border-t border-stone-800">
+                    <div className="flex items-center gap-2 mb-2 text-stone-500">
+                      <Edit3 className="w-4 h-4" />
+                      <span className="text-xs font-bold uppercase tracking-wider">Chef's Notes</span>
+                    </div>
+                    <textarea
+                      value={step.note}
+                      onChange={(e) => updateNote(stepIndex, e.target.value)}
+                      placeholder={`Log details for Step ${step.id} (e.g., "Temp settled at 230", "Used Apple pellets")...`}
+                      className="w-full bg-black/20 border border-stone-800 rounded-lg p-3 text-sm text-stone-300 placeholder-stone-600 focus:outline-none focus:border-amber-700 focus:ring-1 focus:ring-amber-700 transition-all resize-y min-h-[80px]"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="text-center py-12 text-stone-600">
+          <p className="text-xs uppercase tracking-widest mb-2">Designed for the 2026 Season</p>
+          <div className="flex justify-center items-center gap-2 opacity-50">
+            <div className="w-1 h-1 rounded-full bg-stone-500"></div>
+            <div className="w-1 h-1 rounded-full bg-stone-500"></div>
+            <div className="w-1 h-1 rounded-full bg-stone-500"></div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  );
+};
+
+export default DakotaSmokeApp;
