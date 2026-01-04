@@ -20,6 +20,19 @@
         .font-mono {
             font-family: 'JetBrains Mono', monospace;
         }
+        .step-image {
+            transition: transform 0.3s ease;
+        }
+        .step-image:hover {
+            transform: scale(1.02);
+        }
+        .image-overlay {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .step-image-container:hover .image-overlay {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -128,6 +141,7 @@
           // --- State Management ---
           const [activeTab, setActiveTab] = useState('guide');
           const [progress, setProgress] = useState(0);
+          const [lightboxImage, setLightboxImage] = useState(null);
           
           // Icon mapping to keep state serializable (JSON friendly)
           // Using functions here to render the components defined above
@@ -147,6 +161,8 @@
               subtitle: "Gathering Supplies",
               iconKey: "bag",
               color: "from-sky-600 to-blue-700",
+              image: "turkey-prep1.jpg",
+              imageAlt: "Fresh ingredients - oranges, apples, herbs, and roasting pan",
               tasks: [
                 { id: 'b1', text: "Oranges", completed: false },
                 { id: 'b2', text: "Apples", completed: false },
@@ -167,6 +183,8 @@
               subtitle: "Counter Setup",
               iconKey: "chef",
               color: "from-amber-600 to-orange-700",
+              image: "Turkey-prep2.jpg",
+              imageAlt: "Applying seasoning rub to the turkey",
               tasks: [
                 { id: 'p1', text: "Mix Rub: 1/2 cup Tone's Italian + 2 tbsp Sea Salt", completed: false },
                 { id: 'p2', text: "Pat turkey skin completely dry with paper towels", completed: false },
@@ -182,6 +200,8 @@
               subtitle: "Traeger Century 885",
               iconKey: "flame",
               color: "from-stone-700 to-stone-900",
+              image: "Trukey-traegar.jpg",
+              imageAlt: "Turkey positioned on the Traeger grill grates",
               tasks: [
                 { id: 's1', text: "Fill Hopper: Fruit (Cherry/Apple) or Hickory pellets", completed: false },
                 { id: 's2', text: "Place empty roasting pan UNDER the grill grates", completed: false },
@@ -196,6 +216,8 @@
               subtitle: "13lb Bird Estimate: ~3.5 - 4 Hrs Total",
               iconKey: "thermometer",
               color: "from-red-700 to-red-900",
+              image: "Turkey-cooking.jpg",
+              imageAlt: "Smoke and Roast cooking method diagram",
               tasks: [
                 { id: 'c1', text: "Set Traeger to 225°F (Super Smoke if avail)", completed: false },
                 { id: 'c2', text: "SMOKE: Cook for 1 hour exactly (Max flavor absorption)", completed: false, hasTimer: true, duration: 3600 },
@@ -210,6 +232,8 @@
               subtitle: "Patience Pays Off",
               iconKey: "wind",
               color: "from-emerald-700 to-emerald-900",
+              image: "Turkey-resting.jpg",
+              imageAlt: "Finished turkey resting under foil tent",
               tasks: [
                 { id: 'r1', text: "Remove bird, place on board/pan", completed: false },
                 { id: 'r2', text: "Tent loosely with foil", completed: false },
@@ -456,6 +480,26 @@
                           </div>
                         </div>
 
+                        {/* Step Image */}
+                        {step.image && (
+                          <div
+                            className="relative overflow-hidden step-image-container cursor-pointer"
+                            onClick={() => setLightboxImage(step.image)}
+                          >
+                            <img
+                              src={step.image}
+                              alt={step.imageAlt}
+                              className="w-full h-48 sm:h-56 object-cover step-image"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-stone-900/80 via-transparent to-transparent"></div>
+                            <div className="image-overlay absolute inset-0 bg-black/30 flex items-center justify-center">
+                              <span className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm font-medium border border-white/30">
+                                Click to enlarge
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Step Content */}
                         <div className="p-6">
                           <div className="space-y-4">
@@ -519,6 +563,32 @@
                 </div>
 
               </main>
+
+              {/* Lightbox Modal */}
+              {lightboxImage && (
+                <div
+                  className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+                  onClick={() => setLightboxImage(null)}
+                >
+                  <div className="relative max-w-4xl max-h-[90vh] w-full">
+                    <img
+                      src={lightboxImage}
+                      alt="Full size view"
+                      className="w-full h-full object-contain rounded-lg shadow-2xl"
+                    />
+                    <button
+                      onClick={() => setLightboxImage(null)}
+                      className="absolute top-4 right-4 p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                    <p className="text-center text-stone-400 mt-4 text-sm">Click anywhere to close</p>
+                  </div>
+                </div>
+              )}
             </div>
           );
         };
