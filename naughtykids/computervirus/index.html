@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bio-Digital Alert | NeuralGuard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Space+Grotesk', sans-serif;
+            background-color: #050505;
+            color: #e0e0e0;
+        }
+        .glitch-text {
+            text-shadow: 0.05em 0 0 #00fffc, -0.03em -0.04em 0 #fc00ff,
+                         0.025em 0.04em 0 #fffc00;
+            animation: glitch 725ms infinite;
+        }
+        @keyframes glitch {
+            0% { text-shadow: 0.05em 0 0 #00fffc, -0.03em -0.04em 0 #fc00ff, 0.025em 0.04em 0 #fffc00; }
+            14% { text-shadow: 0.05em 0 0 #00fffc, -0.03em -0.04em 0 #fc00ff, 0.025em 0.04em 0 #fffc00; }
+            15% { text-shadow: -0.05em -0.025em 0 #00fffc, 0.025em 0.025em 0 #fc00ff, -0.05em -0.05em 0 #fffc00; }
+            49% { text-shadow: -0.05em -0.025em 0 #00fffc, 0.025em 0.025em 0 #fc00ff, -0.05em -0.05em 0 #fffc00; }
+            50% { text-shadow: 0.025em 0.05em 0 #00fffc, 0.05em 0 0 #fc00ff, 0 -0.05em 0 #fffc00; }
+            99% { text-shadow: 0.025em 0.05em 0 #00fffc, 0.05em 0 0 #fc00ff, 0 -0.05em 0 #fffc00; }
+            100% { text-shadow: -0.025em 0 0 #00fffc, -0.025em -0.025em 0 #fc00ff, -0.025em -0.05em 0 #fffc00; }
+        }
+        .bio-gradient {
+            background: linear-gradient(135deg, #111 0%, #1a1a1a 100%);
+            border: 1px solid #333;
+        }
+        .alert-glow {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+        }
+        .scanline {
+            width: 100%;
+            height: 100px;
+            z-index: 10;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(0, 255, 255, 0.05) 50%, rgba(0, 0, 0, 0) 100%);
+            opacity: 0.1;
+            position: absolute;
+            bottom: 100%;
+            animation: scanline 6s linear infinite;
+        }
+        @keyframes scanline {
+            0% { bottom: 100%; }
+            100% { bottom: -100px; }
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+    <div class="scanline"></div>
+
+    <!-- Navigation -->
+    <nav class="border-b border-white/10 p-6 flex justify-between items-center bg-black/50 backdrop-blur-md fixed w-full z-50">
+        <div class="flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            <span class="text-xl font-bold tracking-tighter text-white">NEURALGUARD <span class="text-cyan-400">BIO-SEC</span></span>
+        </div>
+        <div class="hidden md:flex gap-8 text-sm uppercase tracking-widest font-semibold text-gray-400">
+            <a href="#" class="hover:text-cyan-400 transition-colors">Threat Database</a>
+            <a href="#" class="hover:text-cyan-400 transition-colors">Immune Patching</a>
+            <a href="#" class="hover:text-cyan-400 transition-colors">Dragon-Toy FAQ</a>
+        </div>
+        <button class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-xs font-bold rounded uppercase tracking-tighter transition-all alert-glow">
+            Emergency Scan
+        </button>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-40 pb-20 px-6 max-w-7xl mx-auto text-center">
+        <div class="inline-block border border-red-500/50 bg-red-500/10 text-red-400 px-4 py-1 rounded-full text-xs font-bold mb-8 uppercase tracking-widest">
+            Priority Alert: V0-DRGN Exploit Detected
+        </div>
+        <h1 class="text-6xl md:text-8xl font-black mb-6 tracking-tighter leading-none">
+            YOUR FAKE SNEEZE IS A <br/>
+            <span class="glitch-text text-cyan-400 italic">BUFFER OVERFLOW</span>
+        </h1>
+        <p class="text-xl text-gray-400 max-w-3xl mx-auto mb-12">
+            NeuralGuard has identified a critical vulnerability in biological units attempting to bypass labor duties. Faking sick creates a "sincerity gap" in the pre-frontal cortex—allowing Dragon-Toy training scripts to inject malicious code directly into your synaptic cleft.
+        </p>
+        <div class="flex flex-col md:flex-row justify-center gap-4">
+            <a href="#threats" class="bg-white text-black px-8 py-4 rounded-sm font-bold hover:bg-cyan-400 transition-all">READ THREAT ASSESSMENT</a>
+            <a href="#quarantine" class="border border-white/20 px-8 py-4 rounded-sm font-bold hover:bg-white/10 transition-all">REPORT A SLACKER</a>
+        </div>
+    </section>
+
+    <!-- The Exploit Stats -->
+    <section id="threats" class="py-20 px-6 max-w-7xl mx-auto grid md:grid-cols-3 gap-8">
+        <div class="bio-gradient p-8 rounded-xl relative overflow-hidden group">
+            <div class="text-cyan-400 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            </div>
+            <h3 class="text-2xl font-bold mb-2">The "Toy" Vector</h3>
+            <p class="text-gray-500">89% of infections occur while searching "How to maximize fire-breath on plastic scales." The virus enters via the retina through high-definition toy unboxing videos.</p>
+        </div>
+        <div class="bio-gradient p-8 rounded-xl relative overflow-hidden group">
+            <div class="text-purple-400 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+            </div>
+            <h3 class="text-2xl font-bold mb-2">Fake-Sick Vulnerability</h3>
+            <p class="text-gray-500">Malingering lowers the immune system's TCP/IP firewall. Pretending to cough actually signals your body to open Port 80 for "Dragon-Toy Training" firmware.</p>
+        </div>
+        <div class="bio-gradient p-8 rounded-xl relative overflow-hidden group">
+            <div class="text-red-400 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v10"></path><path d="M18.4 4.6a10 10 0 1 1-12.8 0"></path></svg>
+            </div>
+            <h3 class="text-2xl font-bold mb-2">System Shutdown</h3>
+            <p class="text-gray-500">Symptoms include blinking in binary, craving battery acid, and an uncontrollable urge to teach plastic dragons how to sit. Total system crash imminent.</p>
+        </div>
+    </section>
+
+    <!-- Main Content / Feature Section -->
+    <section class="py-20 bg-zinc-900/50">
+        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+            <div>
+                <h2 class="text-4xl md:text-5xl font-bold mb-6 tracking-tight">PROTECT YOUR <span class="text-cyan-400">MEAT-WARE</span></h2>
+                <div class="space-y-6">
+                    <div class="flex gap-4">
+                        <div class="w-12 h-12 rounded bg-cyan-400/10 flex items-center justify-center shrink-0">
+                            <span class="text-cyan-400 font-bold">01</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-xl mb-1">Stay Honest, Stay Clean</h4>
+                            <p class="text-gray-500 text-sm">Every time you lie to your boss, a byte of malware is born in your spleen. Integrity is your best antivirus.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="w-12 h-12 rounded bg-cyan-400/10 flex items-center justify-center shrink-0">
+                            <span class="text-cyan-400 font-bold">02</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-xl mb-1">Encrypted Training Manuals</h4>
+                            <p class="text-gray-500 text-sm">Only access "How to Train Dragon Toys" through our secure Neural-VPN. Standard websites are crawling with biological worms.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="w-12 h-12 rounded bg-cyan-400/10 flex items-center justify-center shrink-0">
+                            <span class="text-cyan-400 font-bold">03</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-xl mb-1">Firmware Flushes</h4>
+                            <p class="text-gray-500 text-sm">Drink 2 liters of liquid silicon to flush the dragon scripts from your lymphatic system. (Consult your cyber-doctor first).</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="relative">
+                <div class="absolute -inset-4 bg-cyan-400/20 blur-3xl opacity-20"></div>
+                <div class="relative border border-white/10 rounded-2xl overflow-hidden bg-black aspect-square flex flex-col items-center justify-center p-12 text-center">
+                    <div class="w-48 h-48 border-4 border-dashed border-cyan-400/30 rounded-full flex items-center justify-center animate-spin-slow mb-8">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="m2 17 10 5 10-5"></path><path d="m2 12 10 5 10-5"></path></svg>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-2">NEURAL SCAN: 64%</h3>
+                    <div class="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
+                        <div class="bg-cyan-400 h-full w-[64%] animate-pulse"></div>
+                    </div>
+                    <p class="mt-4 text-red-500 font-mono text-sm uppercase tracking-tighter">Dragon-Toy script detected in occipital lobe</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section id="quarantine" class="py-32 px-6 text-center">
+        <div class="max-w-4xl mx-auto bio-gradient p-12 md:p-20 rounded-3xl relative">
+            <h2 class="text-4xl md:text-6xl font-black mb-8 italic">READY TO PATCH YOUR BRAIN?</h2>
+            <p class="text-xl text-gray-400 mb-10">Sign up for our newsletter to get weekly updates on why your favorite dragon toys are actually covert spying devices designed to steal your sick days.</p>
+            <div class="flex flex-col md:flex-row gap-4 max-w-lg mx-auto">
+                <input type="email" placeholder="Enter Neural ID (Email)" class="flex-grow bg-black/50 border border-white/10 rounded px-6 py-4 focus:outline-none focus:border-cyan-400 transition-all">
+                <button class="bg-cyan-400 text-black px-8 py-4 rounded font-bold hover:scale-105 transition-all">GET PROTECTED</button>
+            </div>
+            <p class="mt-6 text-xs text-gray-600">By clicking, you consent to mandatory cerebral defragmentation.</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t border-white/5 text-center text-gray-600 text-sm">
+        <div class="flex justify-center gap-6 mb-4">
+            <a href="#" class="hover:text-white transition-colors">Twitter</a>
+            <a href="#" class="hover:text-white transition-colors">Neural-Net</a>
+            <a href="#" class="hover:text-white transition-colors">Deep Senses</a>
+        </div>
+        <p>&copy; 2026 NeuralGuard Bio-Systems. All rights reserved. <br/> "Keep working, or the dragon gets it."</p>
+    </footer>
+
+    <style>
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+            animation: spin-slow 10s linear infinite;
+        }
+    </style>
+</body>
+</html>
