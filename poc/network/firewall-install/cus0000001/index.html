@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Topology Visualizer - FortiGate LAG Integration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .network-node {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        .network-node:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
+        }
+        .line-flow {
+            background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+            background-size: 200% 100%;
+            animation: flow 2s linear infinite;
+        }
+        @keyframes flow {
+            from { background-position: 200% 0; }
+            to { background-position: -200% 0; }
+        }
+        .port-label {
+            font-size: 0.65rem;
+            background: #1e293b;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #334155;
+        }
+        .lag-cable {
+            height: 2px;
+            background: #475569;
+            width: 100%;
+            margin: 2px 0;
+        }
+        .modal-enter {
+            animation: modalFadeIn 0.2s ease-out forwards;
+        }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-6 font-sans">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="text-center mb-16">
+            <h1 class="text-4xl font-bold tracking-tight text-white mb-2">Network Infrastructure</h1>
+            <p class="text-slate-400">High-Availability Topology: FortiGate 4-Port LAG (802.3ad)</p>
+        </header>
+
+        <!-- Main Topology Map -->
+        <div class="flex flex-col space-y-12">
+            
+            <!-- Layer 1: Internet to Midco -->
+            <div class="flex flex-col items-center">
+                <div class="mb-4 text-xs font-mono text-blue-400 animate-pulse">● INTERNET SOURCE</div>
+                <div onclick="openModal('midco')" class="network-node bg-slate-800 border-2 border-blue-500 rounded-xl p-5 w-64 text-center">
+                    <div class="text-xs text-blue-400 font-bold mb-1 uppercase">Modem / Bridge</div>
+                    <div class="font-bold text-lg">Midco CODA-4582</div>
+                    <div class="text-[10px] text-slate-500 mt-2 italic">DOCSIS 3.1 Gateway</div>
+                </div>
+            </div>
+
+            <!-- Connector Down -->
+            <div class="flex justify-center h-12">
+                <div class="w-px bg-slate-700 relative">
+                    <div class="absolute top-0 left-1/2 -translate-x-1/2 port-label">LAN PORT</div>
+                </div>
+            </div>
+
+            <!-- Layer 2: Primary Router -->
+            <div class="flex flex-col items-center">
+                <div onclick="openModal('router')" class="network-node bg-slate-800 border-2 border-cyan-500 rounded-xl p-5 w-72 text-center relative">
+                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 port-label text-cyan-400 border-cyan-900">WAN1</div>
+                    <div class="text-xs text-cyan-400 font-bold mb-1 uppercase">Araknis Networks</div>
+                    <div class="font-bold text-lg text-white">AN-520-RT</div>
+                    <div class="text-[10px] text-slate-500 mt-2 italic">Core Router / Gateway</div>
+                </div>
+            </div>
+
+            <!-- Branching Layer -->
+            <div class="relative flex justify-center pt-8 pb-12">
+                <div class="absolute top-0 h-px bg-slate-700 w-full max-w-5xl"></div>
+                
+                <div class="flex justify-between w-full max-w-5xl px-4">
+                    <!-- Branch 1: Wattbox -->
+                    <div class="flex flex-col items-center w-1/4">
+                        <div class="h-8 w-px bg-slate-700 relative">
+                            <div class="absolute -top-7 left-1/2 -translate-x-1/2 port-label">LAN1</div>
+                        </div>
+                        <div onclick="openModal('wattbox')" class="network-node bg-slate-800 border-2 border-orange-500 rounded-xl p-5 w-full text-center mt-2">
+                            <div class="text-xs text-orange-400 font-bold mb-1 uppercase">Wattbox</div>
+                            <div class="font-bold text-sm">WB-300-VB-IP-5</div>
+                            <div class="text-[10px] text-slate-500 mt-2 italic">Power Controller</div>
+                        </div>
+                    </div>
+
+                    <!-- Branch 2: Switch (The Hub) -->
+                    <div class="flex flex-col items-center w-1/3 px-4">
+                        <div class="h-8 w-px bg-slate-700 relative">
+                            <div class="absolute -top-7 left-1/2 -translate-x-1/2 port-label">LAN2</div>
+                        </div>
+                        <div onclick="openModal('switch')" class="network-node bg-slate-800 border-2 border-indigo-500 rounded-xl p-5 w-full text-center mt-2">
+                            <div class="text-xs text-indigo-400 font-bold mb-1 uppercase">Araknis Switch</div>
+                            <div class="font-bold text-md text-white uppercase">AN-310-SW-F-24-POE</div>
+                            <div class="text-[10px] text-slate-500 mt-1 italic">24-Port Managed PoE+</div>
+                        </div>
+                        
+                        <!-- Down to AP -->
+                        <div class="h-8 w-px bg-slate-700 mt-4 relative">
+                            <div class="absolute top-0 left-4 text-[10px] text-slate-500 whitespace-nowrap">Trunk Port</div>
+                        </div>
+                        <div onclick="openModal('ap')" class="network-node bg-slate-800 border-2 border-purple-500 rounded-xl p-5 w-full text-center mt-2">
+                            <div class="text-xs text-purple-400 font-bold mb-1 uppercase">Araknis Wifi</div>
+                            <div class="font-bold text-md">Access Points</div>
+                            <div class="text-[10px] text-slate-500 mt-2 italic">VLAN-Tagged SSIDs</div>
+                        </div>
+                    </div>
+
+                    <!-- Branch 3: FortiGate (LAG) -->
+                    <div class="flex flex-col items-center w-1/4">
+                        <!-- LAG Visual: 4 Cables -->
+                        <div class="h-10 w-8 flex flex-col justify-between mb-0.5 mt-[-8px]">
+                            <div class="lag-cable bg-red-500/50"></div>
+                            <div class="lag-cable bg-red-500/50"></div>
+                            <div class="lag-cable bg-red-500/50"></div>
+                            <div class="lag-cable bg-red-500/50"></div>
+                            <div class="absolute -top-7 left-1/2 -translate-x-1/2 port-label text-red-400 whitespace-nowrap">4-PORT LAG (TRUNK)</div>
+                        </div>
+                        <div onclick="openModal('fortigate')" class="network-node bg-slate-900 border-2 border-red-600 rounded-xl p-5 w-full text-center shadow-lg shadow-red-900/20">
+                            <div class="text-xs text-red-500 font-bold mb-1 uppercase">FortiGate</div>
+                            <div class="font-bold text-md text-white">802.3ad LAG</div>
+                            <div class="text-[10px] text-slate-500 mt-2 italic">Aggregate Inspection</div>
+                        </div>
+                        <div class="mt-4 text-[10px] text-red-500 font-mono text-center">4x Physical Links</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Overlay -->
+    <div id="modalOverlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50 overflow-y-auto">
+        <div id="modalContent" class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-8 relative modal-enter">
+            <!-- Close Button -->
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+
+            <!-- Dynamic Content Area -->
+            <div id="modalBody">
+                <!-- Content injected via JS -->
+            </div>
+
+            <div class="mt-8 pt-6 border-t border-slate-700 flex justify-end">
+                <button onclick="closeModal()" class="bg-slate-700 hover:bg-slate-600 text-white px-6 py-2 rounded-lg font-bold transition-colors">
+                    Close Details
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const deviceData = {
+            midco: {
+                title: 'Midco CODA-4582',
+                category: 'Gateway Information',
+                color: 'blue',
+                features: [
+                    '<strong>DOCSIS 3.1:</strong> Supports multi-gigabit cable internet speeds.',
+                    '<strong>Bridge Mode:</strong> Should be set to Bridge Mode to let the Araknis AN-520-RT handle routing.',
+                    '<strong>High Performance:</strong> Optimized for low latency and high reliability.'
+                ]
+            },
+            router: {
+                title: 'Araknis AN-520-RT',
+                category: 'Primary Router Features',
+                color: 'cyan',
+                features: [
+                    '<strong>VLAN Routing:</strong> Serves as the Inter-VLAN router for the network.',
+                    '<strong>Dual-WAN Support:</strong> Configurable WAN/LAN ports for load balancing or failover.',
+                    '<strong>OvrC Enabled:</strong> Integrated cloud management for remote monitoring and reboots.',
+                    '<strong>Policy Routing:</strong> Can be configured to route specific traffic through the FortiGate LAG for inspection.'
+                ]
+            },
+            wattbox: {
+                title: 'Wattbox WB-300-VB',
+                category: 'Power Management',
+                color: 'orange',
+                features: [
+                    '<strong>Auto-Reboot:</strong> Pings the Midco router; if internet fails, it reboots the modem automatically.',
+                    '<strong>IP Control:</strong> Individual outlet control for troubleshooting equipment remotely.',
+                    '<strong>Compact Form:</strong> Vertical mount design for easy integration in equipment racks.'
+                ]
+            },
+            switch: {
+                title: 'Araknis AN-310-SW',
+                category: 'Managed Switch Features',
+                color: 'indigo',
+                features: [
+                    '<strong>LACP / 802.3ad:</strong> Supports Link Aggregation for the 4-port FortiGate bundle.',
+                    '<strong>802.1Q Tagging:</strong> Carries multiple VLANs across the LAG interface.',
+                    '<strong>Full PoE+ Budget:</strong> Powers the Access Points and cameras without separate injectors.',
+                    '<strong>Layer 2 Management:</strong> Configures the Trunk ports for the FortiGate and Access Points.'
+                ]
+            },
+            ap: {
+                title: 'Araknis Access Points',
+                category: 'Wireless Performance',
+                color: 'purple',
+                features: [
+                    '<strong>Trunked VLAN Support:</strong> Can broadcast multiple SSIDs, each tagged with a different VLAN ID.',
+                    '<strong>Seamless Roaming:</strong> Hand-off technology ensures devices stay connected while moving.',
+                    '<strong>Cloud Managed:</strong> Monitoring of signal strength and interference via OvrC.'
+                ]
+            },
+            fortigate: {
+                title: 'FortiGate (4-Port LAG)',
+                category: 'High-Availability Security',
+                color: 'red',
+                features: [
+                    '<strong>802.3ad Aggregate Link:</strong> Combines 4 physical ports into one logical 4Gbps pipe.',
+                    '<strong>Redundancy:</strong> Continued operation if up to 3 physical cables fail.',
+                    '<strong>One-Arm Configuration:</strong> Inspects traffic between local VLANs using logical sub-interfaces on the LAG.',
+                    '<strong>Next-Gen Security:</strong> Provides deep packet inspection (DPI), antivirus, and IPS protection across the aggregate bandwidth.'
+                ]
+            }
+        };
+
+        function openModal(deviceId) {
+            const data = deviceData[deviceId];
+            const modalBody = document.getElementById('modalBody');
+            const modalOverlay = document.getElementById('modalOverlay');
+
+            modalBody.innerHTML = `
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="w-12 h-12 rounded-xl bg-${data.color}-500/20 flex items-center justify-center text-${data.color}-400">
+                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">${data.title}</h2>
+                        <span class="text-xs text-${data.color}-400 font-bold uppercase tracking-widest">${data.category}</span>
+                    </div>
+                </div>
+                <ul class="space-y-4">
+                    ${data.features.map(f => `
+                        <li class="flex items-start gap-3 text-slate-300">
+                            <span class="text-${data.color}-500 mt-1">▹</span>
+                            <span class="text-sm leading-relaxed">${f}</span>
+                        </li>
+                    `).join('')}
+                </ul>
+                ${deviceId === 'fortigate' ? `
+                    <div class="mt-6 p-4 bg-slate-900/50 rounded-lg border border-red-900/30">
+                        <p class="text-[11px] text-red-400 uppercase font-bold mb-2">LAG Configuration Tip</p>
+                        <p class="text-xs text-slate-400 italic">Ensure LACP (802.3ad) is active on both the FortiGate and the Araknis Switch ports to avoid broadcast loops.</p>
+                    </div>
+                ` : ''}
+            `;
+
+            modalOverlay.classList.remove('hidden');
+            modalOverlay.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            const modalOverlay = document.getElementById('modalOverlay');
+            modalOverlay.classList.add('hidden');
+            modalOverlay.classList.remove('flex');
+            document.body.style.overflow = 'auto';
+        }
+
+        window.onclick = function(event) {
+            const modalOverlay = document.getElementById('modalOverlay');
+            if (event.target == modalOverlay) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>
